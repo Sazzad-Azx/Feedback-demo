@@ -417,14 +417,6 @@ export default function FeedbackAndSuggestion() {
     }
   }, []);
 
-  // Bulk classify all visible feedback
-  const handleClassifyAll = useCallback(async () => {
-    const unclassified = paginated.filter(fb => !sentimentMeta[fb.id]);
-    for (const fb of unclassified) {
-      await handleClassify(fb);
-    }
-  }, [paginated, sentimentMeta, handleClassify]);
-
   const [sentimentOverrides, setSentimentOverrides] = useState({});
 
   const allData = useMemo(() => {
@@ -454,6 +446,14 @@ export default function FeedbackAndSuggestion() {
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  // Bulk classify all visible feedback
+  const handleClassifyAll = async () => {
+    const unclassified = paginated.filter(fb => !sentimentMeta[fb.id]);
+    for (const fb of unclassified) {
+      await handleClassify(fb);
+    }
+  };
 
   // Category ranking
   const categoryRanking = useMemo(() => {
