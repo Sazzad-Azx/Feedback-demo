@@ -390,6 +390,7 @@ export default function FeedbackAndSuggestion() {
   const [hoveredRow, setHoveredRow] = useState(null);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [categorySearch, setCategorySearch] = useState("");
 
   const ITEMS_PER_PAGE = 8;
 
@@ -653,56 +654,94 @@ export default function FeedbackAndSuggestion() {
           </div>
 
           {/* Category Ranking */}
-          <div style={styles.card}>
+          <div style={{ ...styles.card, display: "flex", flexDirection: "column", maxHeight: 600 }}>
             <div style={styles.cardHeader}>
               <div style={styles.cardTitle}>
                 <span style={styles.cardTitleIcon}>🏆</span>
                 Top Feedback Areas
+                <span style={{ fontSize: 11, color: "#475569", fontWeight: 400, marginLeft: 4 }}>{categoryRanking.length}</span>
               </div>
             </div>
-            <div style={{ padding: "8px 0" }}>
-              {categoryRanking.map((item, i) => (
+            {/* Search within categories */}
+            <div style={{ padding: "10px 16px 6px" }}>
+              <input
+                type="text"
+                placeholder="Search categories..."
+                value={categorySearch}
+                onChange={e => setCategorySearch(e.target.value)}
+                style={{
+                  width: "100%",
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                  borderRadius: 8,
+                  color: "#cbd5e1",
+                  padding: "7px 12px",
+                  fontSize: 12,
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+                onFocus={e => e.target.style.borderColor = "rgba(99,102,241,0.4)"}
+                onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.06)"}
+              />
+            </div>
+            {/* Scrollable list */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "4px 0" }}>
+              {categoryRanking
+                .filter(item => item.category.toLowerCase().includes(categorySearch.toLowerCase()))
+                .map((item, i) => {
+                  const originalIndex = categoryRanking.indexOf(item);
+                  return (
                 <div
                   key={item.category}
                   style={{
-                    padding: "12px 20px",
+                    padding: "10px 18px",
                     display: "flex",
                     alignItems: "center",
                     gap: 12,
-                    borderBottom: i < categoryRanking.length - 1 ? "1px solid rgba(255,255,255,0.03)" : "none",
+                    borderBottom: "1px solid rgba(255,255,255,0.03)",
                     cursor: "pointer",
                     transition: "background 0.15s",
+                    background: filterCategory === item.category ? "rgba(99,102,241,0.08)" : "transparent",
                   }}
-                  onClick={() => { setFilterCategory(item.category); setCurrentPage(1); }}
-                  onMouseOver={e => e.currentTarget.style.background = "rgba(255,255,255,0.02)"}
-                  onMouseOut={e => e.currentTarget.style.background = "transparent"}
+                  onClick={() => { setFilterCategory(filterCategory === item.category ? "All" : item.category); setCurrentPage(1); }}
+                  onMouseOver={e => e.currentTarget.style.background = filterCategory === item.category ? "rgba(99,102,241,0.12)" : "rgba(255,255,255,0.02)"}
+                  onMouseOut={e => e.currentTarget.style.background = filterCategory === item.category ? "rgba(99,102,241,0.08)" : "transparent"}
                 >
                   <div style={{
-                    width: 28, height: 28, borderRadius: 8,
-                    background: i === 0 ? "rgba(234,179,8,0.15)" : i === 1 ? "rgba(148,163,184,0.12)" : i === 2 ? "rgba(180,120,60,0.12)" : "rgba(255,255,255,0.03)",
+                    width: 26, height: 26, borderRadius: 7,
+                    background: originalIndex === 0 ? "rgba(234,179,8,0.15)" : originalIndex === 1 ? "rgba(148,163,184,0.12)" : originalIndex === 2 ? "rgba(180,120,60,0.12)" : "rgba(255,255,255,0.03)",
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 13, fontWeight: 700,
-                    color: i === 0 ? "#eab308" : i === 1 ? "#94a3b8" : i === 2 ? "#b4783c" : "#475569",
+                    fontSize: 12, fontWeight: 700,
+                    color: originalIndex === 0 ? "#eab308" : originalIndex === 1 ? "#94a3b8" : originalIndex === 2 ? "#b4783c" : "#475569",
+                    flexShrink: 0,
                   }}>
-                    {i + 1}
+                    {originalIndex + 1}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: "#cbd5e1", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: "#cbd5e1", marginBottom: 5, display: "flex", alignItems: "center", gap: 6 }}>
                       <span>{item.meta.icon}</span>
                       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.category}</span>
                     </div>
-                    <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 4, height: 8, overflow: "hidden" }}>
+                    <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 4, height: 6, overflow: "hidden" }}>
                       <div style={styles.rankBar((item.count / maxCatCount) * 100, item.meta.color)} />
                     </div>
                   </div>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: item.meta.color, minWidth: 36, textAlign: "right" }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: item.meta.color, minWidth: 32, textAlign: "right" }}>
                     {item.count}
                   </div>
                 </div>
-              ))}
+                );
+              })}
+              {categoryRanking.filter(item => item.category.toLowerCase().includes(categorySearch.toLowerCase())).length === 0 && (
+                <div style={{ padding: "20px", textAlign: "center", fontSize: 12, color: "#475569" }}>No categories found</div>
+              )}
             </div>
-            <div style={{ padding: "14px 20px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-              <div style={{ fontSize: 11, color: "#475569", textAlign: "center" }}>Click a category to filter the feedback table</div>
+            <div style={{ padding: "10px 16px", borderTop: "1px solid rgba(255,255,255,0.04)", flexShrink: 0 }}>
+              <div style={{ fontSize: 11, color: "#475569", textAlign: "center" }}>
+                {filterCategory !== "All" ? (
+                  <span>Filtered by <span style={{ color: "#818cf8" }}>{filterCategory}</span> — <span style={{ cursor: "pointer", color: "#f87171" }} onClick={() => { setFilterCategory("All"); setCurrentPage(1); }}>clear</span></span>
+                ) : "Click a category to filter the feedback table"}
+              </div>
             </div>
           </div>
         </div>
