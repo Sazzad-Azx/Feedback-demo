@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import DateRangePicker from "./DateRangePicker";
+import { classifySentiment, keywordSentiment } from "./sentimentService";
 
 // ─── Mock Data ───────────────────────────────────────────────────
 const MOCK_FEEDBACK = [
@@ -391,10 +392,45 @@ export default function FeedbackAndSuggestion() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
+  const [classifyingIds, setClassifyingIds] = useState(new Set());
+  const [sentimentMeta, setSentimentMeta] = useState({}); // { [id]: { confidence, reason, method } }
 
   const ITEMS_PER_PAGE = 8;
 
-  const allData = useMemo(() => [...feedbackData, ...manualEntries], [feedbackData, manualEntries]);
+  // Classify a single feedback item's sentiment via AI/keyword hybrid
+  const handleClassify = useCallback(async (fb) => {
+    setClassifyingIds(prev => new Set([...prev, fb.id]));
+    try {
+      const result = await classifySentiment(fb.fullText);
+      // Update sentiment in feedbackData or manualEntries
+      setManualEntries(prev => prev.map(f => f.id === fb.id ? { ...f, sentiment: result.sentiment } : f));
+      // For mock data, we store overrides
+      setSentimentMeta(prev => ({ ...prev, [fb.id]: { confidence: result.confidence, reason: result.reason, method: result.method } }));
+      // Also update mock feedback sentiment if it's from mock data
+      if (fb.id.startsWith("FB-")) {
+        setSentimentOverrides(prev => ({ ...prev, [fb.id]: result.sentiment }));
+      }
+    } catch (err) {
+      console.error("Classification failed:", err);
+    } finally {
+      setClassifyingIds(prev => { const s = new Set(prev); s.delete(fb.id); return s; });
+    }
+  }, []);
+
+  // Bulk classify all visible feedback
+  const handleClassifyAll = useCallback(async () => {
+    const unclassified = paginated.filter(fb => !sentimentMeta[fb.id]);
+    for (const fb of unclassified) {
+      await handleClassify(fb);
+    }
+  }, [paginated, sentimentMeta, handleClassify]);
+
+  const [sentimentOverrides, setSentimentOverrides] = useState({});
+
+  const allData = useMemo(() => {
+    const base = feedbackData.map(f => sentimentOverrides[f.id] ? { ...f, sentiment: sentimentOverrides[f.id] } : f);
+    return [...base, ...manualEntries];
+  }, [feedbackData, manualEntries, sentimentOverrides]);
 
   const filtered = useMemo(() => {
     let d = allData;
@@ -443,24 +479,30 @@ export default function FeedbackAndSuggestion() {
     else { setSortBy(field); setSortDir("desc"); }
   };
 
-  const handleSubmitManual = () => {
+  const handleSubmitManual = async () => {
     if (!manualFeedback.headline.trim() || !manualFeedback.description.trim()) return;
+    const id = `MF-${String(manualEntries.length + 1).padStart(3, "0")}`;
+    // Instant keyword-based sentiment for immediate UI
+    const quickResult = keywordSentiment(manualFeedback.description);
     const entry = {
-      id: `MF-${String(manualEntries.length + 1).padStart(3, "0")}`,
+      id,
       chatId: "MANUAL",
       date: new Date().toISOString().slice(0, 10),
       headline: manualFeedback.headline,
       fullText: manualFeedback.description,
       category: manualFeedback.category,
-      sentiment: "Neutral",
+      sentiment: quickResult.sentiment,
       priority: manualFeedback.priority,
       status: "New",
       source: manualFeedback.source,
     };
     setManualEntries(prev => [entry, ...prev]);
+    setSentimentMeta(prev => ({ ...prev, [id]: { confidence: quickResult.confidence, reason: quickResult.reason, method: "keyword" } }));
     setManualFeedback({ headline: "", category: "Account Related Issue", description: "", priority: "Medium", source: "Internal Observation" });
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000);
+    // Background: upgrade to AI classification
+    handleClassify(entry);
   };
 
   const SortArrow = ({ field }) => (
@@ -572,6 +614,28 @@ export default function FeedbackAndSuggestion() {
                 AI-Identified Feedback & Suggestions
                 <span style={{ fontSize: 12, color: "#475569", fontWeight: 400, marginLeft: 8 }}>{filtered.length} results</span>
               </div>
+              <button
+                onClick={handleClassifyAll}
+                style={{
+                  background: "linear-gradient(135deg, #6366f1, #4f46e5)",
+                  border: "none",
+                  color: "#fff",
+                  borderRadius: 7,
+                  padding: "6px 14px",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  transition: "opacity 0.15s",
+                  boxShadow: "0 2px 6px rgba(99,102,241,0.2)",
+                }}
+                onMouseOver={e => e.currentTarget.style.opacity = "0.85"}
+                onMouseOut={e => e.currentTarget.style.opacity = "1"}
+              >
+                🧠 Classify All
+              </button>
             </div>
             <div style={{ overflowX: "auto" }}>
               <table style={styles.table}>
@@ -617,9 +681,35 @@ export default function FeedbackAndSuggestion() {
                         </span>
                       </td>
                       <td style={styles.td}>
-                        <span style={{ color: SENTIMENT_MAP[fb.sentiment]?.color, fontSize: 12 }}>
-                          {SENTIMENT_MAP[fb.sentiment]?.icon} {fb.sentiment}
-                        </span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ color: SENTIMENT_MAP[fb.sentiment]?.color, fontSize: 12 }}>
+                            {SENTIMENT_MAP[fb.sentiment]?.icon} {fb.sentiment}
+                          </span>
+                          {sentimentMeta[fb.id] && (
+                            <span title={sentimentMeta[fb.id].reason} style={{
+                              fontSize: 9,
+                              padding: "1px 5px",
+                              borderRadius: 4,
+                              background: sentimentMeta[fb.id].method === "ai" ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.06)",
+                              color: sentimentMeta[fb.id].method === "ai" ? "#818cf8" : "#64748b",
+                              fontWeight: 600,
+                              cursor: "help",
+                            }}>
+                              {sentimentMeta[fb.id].method === "ai" ? "AI" : "KW"} {sentimentMeta[fb.id].confidence}%
+                            </span>
+                          )}
+                          {classifyingIds.has(fb.id) ? (
+                            <span style={{ fontSize: 10, color: "#6366f1", animation: "pulse 1s infinite" }}>...</span>
+                          ) : (
+                            <span
+                              title="Re-classify with AI"
+                              onClick={(e) => { e.stopPropagation(); handleClassify(fb); }}
+                              style={{ fontSize: 11, cursor: "pointer", color: "#475569", transition: "color 0.15s" }}
+                              onMouseOver={e => e.currentTarget.style.color = "#6366f1"}
+                              onMouseOut={e => e.currentTarget.style.color = "#475569"}
+                            >⟳</span>
+                          )}
+                        </div>
                       </td>
                       <td style={styles.td}>
                         <span style={styles.badge(PRIORITY_COLORS[fb.priority].bg, PRIORITY_COLORS[fb.priority].text)}>
