@@ -1,24 +1,23 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import DateRangePicker from "./DateRangePicker";
-import { classifySentiment, keywordSentiment } from "./sentimentService";
 
 // ─── Mock Data ───────────────────────────────────────────────────
 const MOCK_FEEDBACK = [
-  { id: "FB-001", chatId: "CNV-88234", date: "2026-03-26", headline: "Login issues after password reset on mobile app", fullText: "Customer reported that after resetting their password through the mobile app, they were unable to log back in for over 30 minutes. The session token wasn't refreshing properly. They suggested adding a 'force logout all devices' option during password reset.", category: "Account Related Issue", sentiment: "Negative", priority: "High", status: "Under Review" },
-  { id: "FB-002", chatId: "CNV-88190", date: "2026-03-26", headline: "Requested dark mode for the trading dashboard", fullText: "Customer mentioned eye strain during late-night trading sessions and suggested implementing a dark mode toggle for the main trading dashboard. They referenced competitor platforms that already offer this.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "New" },
-  { id: "FB-003", chatId: "CNV-88102", date: "2026-03-25", headline: "Payout processing time is too slow compared to competitors", fullText: "Customer expressed frustration that payouts take 3-5 business days while competitors offer 24-hour processing. Suggested partnering with faster payment processors or offering crypto payout options for instant withdrawal.", category: "Payout Related Issue", sentiment: "Negative", priority: "High", status: "Escalated" },
-  { id: "FB-004", chatId: "CNV-87998", date: "2026-03-25", headline: "Appreciated the quick resolution of account verification", fullText: "Customer praised the support team for resolving their KYC verification issue within 10 minutes. They suggested this level of service should be highlighted in marketing materials.", category: "KYC_Issue", sentiment: "Positive", priority: "Low", status: "Acknowledged" },
-  { id: "FB-005", chatId: "CNV-87845", date: "2026-03-24", headline: "Coupon code not applying at checkout for scaling plan", fullText: "Multiple customers have reported that promotional coupon codes for the scaling plan are not being applied correctly at checkout. The discount shows briefly then disappears when the payment page loads.", category: "Offers & Coupons", sentiment: "Negative", priority: "High", status: "In Progress" },
-  { id: "FB-006", chatId: "CNV-87790", date: "2026-03-24", headline: "Suggestion to add MT5 platform support", fullText: "Customer strongly suggested adding MetaTrader 5 support alongside MT4. They mentioned that many professional traders prefer MT5 for its advanced charting and multi-asset capabilities.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "Under Review" },
-  { id: "FB-007", chatId: "CNV-87701", date: "2026-03-23", headline: "Scaling rules documentation is confusing and outdated", fullText: "Customer found the scaling rules documentation contradictory and hard to follow. Specific sections about profit targets and drawdown limits had conflicting information. Suggested a visual flowchart instead of text-heavy docs.", category: "Rules & Scaling", sentiment: "Negative", priority: "Medium", status: "In Progress" },
-  { id: "FB-008", chatId: "CNV-87650", date: "2026-03-23", headline: "Refund policy needs clearer communication upfront", fullText: "Customer was surprised by the refund policy terms after purchase. They suggested displaying refund conditions more prominently on the pricing page and during checkout, not just in fine print.", category: "Payment & Refunds", sentiment: "Negative", priority: "Medium", status: "New" },
-  { id: "FB-009", chatId: "CNV-87588", date: "2026-03-22", headline: "Live chat wait times have improved significantly", fullText: "Returning customer noted that live chat response times have dropped from 15+ minutes to under 3 minutes over the past month. They appreciated the improvement and suggested maintaining this standard.", category: "Support", sentiment: "Positive", priority: "Low", status: "Acknowledged" },
-  { id: "FB-010", chatId: "CNV-87490", date: "2026-03-22", headline: "Account dashboard shows incorrect balance after trade close", fullText: "Customer reported a UI bug where their account balance didn't update immediately after closing a profitable trade. The correct balance only appeared after a manual page refresh. This caused anxiety about whether the trade was properly recorded.", category: "Account Related Issue", sentiment: "Negative", priority: "High", status: "Escalated" },
-  { id: "FB-011", chatId: "CNV-87402", date: "2026-03-21", headline: "Need better notification system for margin calls", fullText: "Customer nearly missed a margin call because the only notification was an in-app popup they didn't see. Suggested adding email, SMS, and push notification options for critical account alerts.", category: "Platform & Trading", sentiment: "Negative", priority: "High", status: "Under Review" },
-  { id: "FB-012", chatId: "CNV-87355", date: "2026-03-21", headline: "KYC re-verification process is unnecessarily repetitive", fullText: "Long-time customer was asked to re-verify KYC documents they had already submitted. The process required uploading the same documents again. Suggested implementing a document retention policy for verified users.", category: "KYC_Issue", sentiment: "Negative", priority: "Medium", status: "New" },
-  { id: "FB-013", chatId: "CNV-87290", date: "2026-03-20", headline: "Suggest adding a demo/paper trading mode for new users", fullText: "New customer suggested offering a paper trading or demo mode so users can familiarize themselves with the platform before committing real capital. This would reduce early churn and support tickets from confused newcomers.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "New" },
-  { id: "FB-014", chatId: "CNV-87200", date: "2026-03-20", headline: "Weekend support availability is needed for global traders", fullText: "Customer in a different timezone emphasized the need for weekend support since markets they trade are open on weekends. Suggested at least limited weekend chat hours or an AI chatbot for common issues.", category: "Support", sentiment: "Neutral", priority: "Medium", status: "Under Review" },
-  { id: "FB-015", chatId: "CNV-87120", date: "2026-03-19", headline: "Promotional email promised discount not honored at checkout", fullText: "Customer received a promotional email with a 20% discount code but the code was rejected at checkout. Support confirmed the promotion had ended the day before the email was sent. Customer suggested better coordination between marketing and system teams.", category: "Offers & Coupons", sentiment: "Negative", priority: "High", status: "Escalated" },
+  { id: "FB-001", chatId: "CNV-88234", date: "2026-03-26", headline: "Login issues after password reset on mobile app", fullText: "Customer reported that after resetting their password through the mobile app, they were unable to log back in for over 30 minutes. The session token wasn't refreshing properly. They suggested adding a 'force logout all devices' option during password reset.", category: "Account Related Issue", sentiment: "Negative", priority: "High", status: "Under Review", type: "feedback" },
+  { id: "FB-002", chatId: "CNV-88190", date: "2026-03-26", headline: "Requested dark mode for the trading dashboard", fullText: "Customer mentioned eye strain during late-night trading sessions and suggested implementing a dark mode toggle for the main trading dashboard. They referenced competitor platforms that already offer this.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "New", type: "suggestion" },
+  { id: "FB-003", chatId: "CNV-88102", date: "2026-03-25", headline: "Payout processing time is too slow compared to competitors", fullText: "Customer expressed frustration that payouts take 3-5 business days while competitors offer 24-hour processing. Suggested partnering with faster payment processors or offering crypto payout options for instant withdrawal.", category: "Payout Related Issue", sentiment: "Negative", priority: "High", status: "Escalated", type: "feedback" },
+  { id: "FB-004", chatId: "CNV-87998", date: "2026-03-25", headline: "Appreciated the quick resolution of account verification", fullText: "Customer praised the support team for resolving their KYC verification issue within 10 minutes. They suggested this level of service should be highlighted in marketing materials.", category: "KYC_Issue", sentiment: "Positive", priority: "Low", status: "Acknowledged", type: "feedback" },
+  { id: "FB-005", chatId: "CNV-87845", date: "2026-03-24", headline: "Coupon code not applying at checkout for scaling plan", fullText: "Multiple customers have reported that promotional coupon codes for the scaling plan are not being applied correctly at checkout. The discount shows briefly then disappears when the payment page loads.", category: "Offers & Coupons", sentiment: "Negative", priority: "High", status: "In Progress", type: "feedback" },
+  { id: "FB-006", chatId: "CNV-87790", date: "2026-03-24", headline: "Suggestion to add MT5 platform support", fullText: "Customer strongly suggested adding MetaTrader 5 support alongside MT4. They mentioned that many professional traders prefer MT5 for its advanced charting and multi-asset capabilities.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "Under Review", type: "suggestion" },
+  { id: "FB-007", chatId: "CNV-87701", date: "2026-03-23", headline: "Scaling rules documentation is confusing and outdated", fullText: "Customer found the scaling rules documentation contradictory and hard to follow. Specific sections about profit targets and drawdown limits had conflicting information. Suggested a visual flowchart instead of text-heavy docs.", category: "Rules & Scaling", sentiment: "Negative", priority: "Medium", status: "In Progress", type: "feedback" },
+  { id: "FB-008", chatId: "CNV-87650", date: "2026-03-23", headline: "Refund policy needs clearer communication upfront", fullText: "Customer was surprised by the refund policy terms after purchase. They suggested displaying refund conditions more prominently on the pricing page and during checkout, not just in fine print.", category: "Payment & Refunds", sentiment: "Negative", priority: "Medium", status: "New", type: "suggestion" },
+  { id: "FB-009", chatId: "CNV-87588", date: "2026-03-22", headline: "Live chat wait times have improved significantly", fullText: "Returning customer noted that live chat response times have dropped from 15+ minutes to under 3 minutes over the past month. They appreciated the improvement and suggested maintaining this standard.", category: "Support", sentiment: "Positive", priority: "Low", status: "Acknowledged", type: "feedback" },
+  { id: "FB-010", chatId: "CNV-87490", date: "2026-03-22", headline: "Account dashboard shows incorrect balance after trade close", fullText: "Customer reported a UI bug where their account balance didn't update immediately after closing a profitable trade. The correct balance only appeared after a manual page refresh. This caused anxiety about whether the trade was properly recorded.", category: "Account Related Issue", sentiment: "Negative", priority: "High", status: "Escalated", type: "feedback" },
+  { id: "FB-011", chatId: "CNV-87402", date: "2026-03-21", headline: "Need better notification system for margin calls", fullText: "Customer nearly missed a margin call because the only notification was an in-app popup they didn't see. Suggested adding email, SMS, and push notification options for critical account alerts.", category: "Platform & Trading", sentiment: "Negative", priority: "High", status: "Under Review", type: "suggestion" },
+  { id: "FB-012", chatId: "CNV-87355", date: "2026-03-21", headline: "KYC re-verification process is unnecessarily repetitive", fullText: "Long-time customer was asked to re-verify KYC documents they had already submitted. The process required uploading the same documents again. Suggested implementing a document retention policy for verified users.", category: "KYC_Issue", sentiment: "Negative", priority: "Medium", status: "New", type: "feedback" },
+  { id: "FB-013", chatId: "CNV-87290", date: "2026-03-20", headline: "Suggest adding a demo/paper trading mode for new users", fullText: "New customer suggested offering a paper trading or demo mode so users can familiarize themselves with the platform before committing real capital. This would reduce early churn and support tickets from confused newcomers.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "New", type: "suggestion" },
+  { id: "FB-014", chatId: "CNV-87200", date: "2026-03-20", headline: "Weekend support availability is needed for global traders", fullText: "Customer in a different timezone emphasized the need for weekend support since markets they trade are open on weekends. Suggested at least limited weekend chat hours or an AI chatbot for common issues.", category: "Support", sentiment: "Neutral", priority: "Medium", status: "Under Review", type: "suggestion" },
+  { id: "FB-015", chatId: "CNV-87120", date: "2026-03-19", headline: "Promotional email promised discount not honored at checkout", fullText: "Customer received a promotional email with a 20% discount code but the code was rejected at checkout. Support confirmed the promotion had ended the day before the email was sent. Customer suggested better coordination between marketing and system teams.", category: "Offers & Coupons", sentiment: "Negative", priority: "High", status: "Escalated", type: "feedback" },
 ];
 
 const CATEGORIES_META = {
@@ -32,24 +31,10 @@ const CATEGORIES_META = {
   "KYC_Issue": { color: "#c084fc", icon: "🪪" },
 };
 
-const STATUS_COLORS = {
-  "New": { bg: "rgba(96,165,250,0.15)", text: "#60a5fa" },
-  "Under Review": { bg: "rgba(251,191,36,0.15)", text: "#fbbf24" },
-  "In Progress": { bg: "rgba(52,211,153,0.15)", text: "#34d399" },
-  "Escalated": { bg: "rgba(248,113,113,0.15)", text: "#f87171" },
-  "Acknowledged": { bg: "rgba(148,163,184,0.15)", text: "#94a3b8" },
-};
-
 const PRIORITY_COLORS = {
   "High": { bg: "rgba(239,68,68,0.15)", text: "#ef4444", dot: "#ef4444" },
   "Medium": { bg: "rgba(234,179,8,0.15)", text: "#eab308", dot: "#eab308" },
   "Low": { bg: "rgba(34,197,94,0.15)", text: "#22c55e", dot: "#22c55e" },
-};
-
-const SENTIMENT_MAP = {
-  "Positive": { color: "#22c55e", icon: "▲" },
-  "Neutral": { color: "#94a3b8", icon: "●" },
-  "Negative": { color: "#ef4444", icon: "▼" },
 };
 
 // ─── Styles ──────────────────────────────────────────────────────
@@ -379,76 +364,25 @@ export default function FeedbackAndSuggestion() {
   const [viewingChat, setViewingChat] = useState(null);
   const [filterCategory, setFilterCategory] = useState("All");
   const [filterPriority, setFilterPriority] = useState("All");
-  const [filterStatus, setFilterStatus] = useState("All");
-  const [filterSentiment, setFilterSentiment] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("date");
   const [sortDir, setSortDir] = useState("desc");
-  const [manualFeedback, setManualFeedback] = useState({ headline: "", category: "Account Related Issue", description: "", priority: "Medium", source: "Internal Observation" });
-  const [manualEntries, setManualEntries] = useState([]);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [hoveredRow, setHoveredRow] = useState(null);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
-  const [classifyingIds, setClassifyingIds] = useState(new Set());
-  const [sentimentMeta, setSentimentMeta] = useState({}); // { [id]: { confidence, reason, method } }
-
+  const [activeTab, setActiveTab] = useState("feedback");
   const ITEMS_PER_PAGE = 8;
 
-  // Classify a single feedback item's sentiment via AI/keyword hybrid
-  const handleClassify = useCallback(async (fb) => {
-    setClassifyingIds(prev => new Set([...prev, fb.id]));
-    try {
-      const result = await classifySentiment(fb.fullText);
-      // Update sentiment and priority in manual entries
-      setManualEntries(prev => prev.map(f => f.id === fb.id ? { ...f, sentiment: result.sentiment, priority: result.priority || f.priority } : f));
-      // For mock data, we store overrides
-      setSentimentMeta(prev => ({ ...prev, [fb.id]: { confidence: result.confidence, reason: result.reason, method: result.method, priority: result.priority } }));
-      // Also update mock feedback sentiment and priority if it's from mock data
-      if (fb.id.startsWith("FB-")) {
-        setSentimentOverrides(prev => ({ ...prev, [fb.id]: result.sentiment }));
-        if (result.priority) setPriorityOverrides(prev => ({ ...prev, [fb.id]: result.priority }));
-      }
-    } catch (err) {
-      console.error("Classification failed:", err);
-    } finally {
-      setClassifyingIds(prev => { const s = new Set(prev); s.delete(fb.id); return s; });
-    }
-  }, []);
-
-  const [sentimentOverrides, setSentimentOverrides] = useState({});
-  const [priorityOverrides, setPriorityOverrides] = useState({});
-  const [statusOverrides, setStatusOverrides] = useState({});
-
-  const handleStatusChange = useCallback((id, newStatus, isMock) => {
-    if (isMock) {
-      setStatusOverrides(prev => ({ ...prev, [id]: newStatus }));
-    } else {
-      setManualEntries(prev => prev.map(f => f.id === id ? { ...f, status: newStatus } : f));
-    }
-    // Also update selectedFeedback if it's open
-    setSelectedFeedback(prev => prev && prev.id === id ? { ...prev, status: newStatus } : prev);
-  }, []);
-
   const allData = useMemo(() => {
-    const base = feedbackData.map(f => {
-      let updated = f;
-      if (sentimentOverrides[f.id]) updated = { ...updated, sentiment: sentimentOverrides[f.id] };
-      if (priorityOverrides[f.id]) updated = { ...updated, priority: priorityOverrides[f.id] };
-      if (statusOverrides[f.id]) updated = { ...updated, status: statusOverrides[f.id] };
-      return updated;
-    });
-    return [...base, ...manualEntries];
-  }, [feedbackData, manualEntries, sentimentOverrides, priorityOverrides, statusOverrides]);
+    return [...feedbackData];
+  }, [feedbackData]);
 
   const filtered = useMemo(() => {
-    let d = allData;
+    let d = allData.filter(f => f.type === activeTab);
     if (filterCategory !== "All") d = d.filter(f => f.category === filterCategory);
     if (filterPriority !== "All") d = d.filter(f => f.priority === filterPriority);
-    if (filterStatus !== "All") d = d.filter(f => f.status === filterStatus);
-    if (filterSentiment !== "All") d = d.filter(f => f.sentiment === filterSentiment);
     if (searchQuery.trim()) d = d.filter(f => f.headline.toLowerCase().includes(searchQuery.toLowerCase()));
     if (dateFrom) d = d.filter(f => f.date >= dateFrom);
     if (dateTo) d = d.filter(f => f.date <= dateTo);
@@ -461,67 +395,32 @@ export default function FeedbackAndSuggestion() {
       return 0;
     });
     return d;
-  }, [allData, filterCategory, filterPriority, filterStatus, filterSentiment, searchQuery, dateFrom, dateTo, sortBy, sortDir]);
+  }, [allData, activeTab, filterCategory, filterPriority, searchQuery, dateFrom, dateTo, sortBy, sortDir]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-  // Bulk classify all visible feedback
-  const handleClassifyAll = async () => {
-    const unclassified = paginated.filter(fb => !sentimentMeta[fb.id]);
-    for (const fb of unclassified) {
-      await handleClassify(fb);
-    }
-  };
+  // Category ranking (scoped to active tab)
+  const tabData = useMemo(() => allData.filter(f => f.type === activeTab), [allData, activeTab]);
 
-  // Category ranking
   const categoryRanking = useMemo(() => {
     const counts = {};
-    allData.forEach(f => { counts[f.category] = (counts[f.category] || 0) + 1; });
+    tabData.forEach(f => { counts[f.category] = (counts[f.category] || 0) + 1; });
     return Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([cat, count]) => ({ category: cat, count, meta: CATEGORIES_META[cat] || { color: "#64748b", icon: "📋" } }));
-  }, [allData]);
+  }, [tabData]);
 
   const maxCatCount = categoryRanking[0]?.count || 1;
 
-  // Summary metrics
+  // Summary metrics (scoped to active tab)
   const metrics = useMemo(() => {
-    const total = allData.length;
-    const highPriority = allData.filter(f => f.priority === "High").length;
-    const negative = allData.filter(f => f.sentiment === "Negative").length;
-    const actionable = allData.filter(f => ["New", "Under Review"].includes(f.status)).length;
-    const resolved = allData.filter(f => ["Acknowledged", "In Progress"].includes(f.status)).length;
-    return { total, highPriority, negative, actionable, resolved };
-  }, [allData]);
+    const total = tabData.length;
+    const highPriority = tabData.filter(f => f.priority === "High").length;
+    return { total, highPriority };
+  }, [tabData]);
 
   const handleSort = (field) => {
     if (sortBy === field) setSortDir(d => d === "desc" ? "asc" : "desc");
     else { setSortBy(field); setSortDir("desc"); }
-  };
-
-  const handleSubmitManual = async () => {
-    if (!manualFeedback.headline.trim() || !manualFeedback.description.trim()) return;
-    const id = `MF-${String(manualEntries.length + 1).padStart(3, "0")}`;
-    // Instant keyword-based sentiment for immediate UI
-    const quickResult = keywordSentiment(manualFeedback.description);
-    const entry = {
-      id,
-      chatId: "MANUAL",
-      date: new Date().toISOString().slice(0, 10),
-      headline: manualFeedback.headline,
-      fullText: manualFeedback.description,
-      category: manualFeedback.category,
-      sentiment: quickResult.sentiment,
-      priority: manualFeedback.priority,
-      status: "New",
-      source: manualFeedback.source,
-    };
-    setManualEntries(prev => [entry, ...prev]);
-    setSentimentMeta(prev => ({ ...prev, [id]: { confidence: quickResult.confidence, reason: quickResult.reason, method: "keyword" } }));
-    setManualFeedback({ headline: "", category: "Account Related Issue", description: "", priority: "Medium", source: "Internal Observation" });
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
-    // Background: upgrade to AI classification
-    handleClassify(entry);
   };
 
   const SortArrow = ({ field }) => (
@@ -547,6 +446,50 @@ export default function FeedbackAndSuggestion() {
           <p style={styles.pageSubtitle}>AI-identified customer insights and manually submitted feedback for product improvement.</p>
         </div>
 
+        {/* Tab Switcher */}
+        <div style={{
+          display: "inline-flex",
+          background: "rgba(255,255,255,0.04)",
+          borderRadius: 10,
+          padding: 3,
+          marginBottom: 24,
+          border: "1px solid rgba(255,255,255,0.06)",
+        }}>
+          {[
+            { key: "feedback", label: "Feedback" },
+            { key: "suggestion", label: "Suggestions" },
+          ].map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => { setActiveTab(tab.key); setCurrentPage(1); setFilterCategory("All"); }}
+              style={{
+                padding: "8px 24px",
+                fontSize: 13,
+                fontWeight: 600,
+                border: "none",
+                borderRadius: 8,
+                cursor: "pointer",
+                transition: "all 0.2s",
+                background: activeTab === tab.key ? "rgba(99,102,241,0.2)" : "transparent",
+                color: activeTab === tab.key ? "#818cf8" : "#64748b",
+                boxShadow: activeTab === tab.key ? "0 0 12px rgba(99,102,241,0.1)" : "none",
+              }}
+            >
+              {tab.label}
+              <span style={{
+                marginLeft: 8,
+                fontSize: 11,
+                padding: "2px 7px",
+                borderRadius: 6,
+                background: activeTab === tab.key ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.06)",
+                color: activeTab === tab.key ? "#a5b4fc" : "#475569",
+              }}>
+                {allData.filter(f => f.type === tab.key).length}
+              </span>
+            </button>
+          ))}
+        </div>
+
         {/* Filter Bar */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 24 }}>
           <div style={{ position: "relative", flex: "1 1 220px", maxWidth: 280 }}>
@@ -568,21 +511,6 @@ export default function FeedbackAndSuggestion() {
             <option value="Medium">Medium</option>
             <option value="Low">Low</option>
           </select>
-          <select style={styles.filterSelect} value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}>
-            <option value="All">All Statuses</option>
-            <option value="New">New</option>
-            <option value="Under Review">Under Review</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Escalated">Escalated</option>
-            <option value="Acknowledged">Acknowledged</option>
-          </select>
-          <select style={styles.filterSelect} value={filterSentiment} onChange={e => { setFilterSentiment(e.target.value); setCurrentPage(1); }}>
-            <option value="All">All Sentiments</option>
-            <option value="Positive">Positive</option>
-            <option value="Neutral">Neutral</option>
-            <option value="Negative">Negative</option>
-          </select>
-
           {/* Spacer to push date filter right */}
           <div style={{ flex: "1 1 0", minWidth: 0 }} />
 
@@ -606,21 +534,6 @@ export default function FeedbackAndSuggestion() {
             <div style={{ ...styles.metricValue, color: "#ef4444" }}>{metrics.highPriority}</div>
             <div style={styles.metricSub}>{((metrics.highPriority / metrics.total) * 100).toFixed(0)}% of total feedback</div>
           </div>
-          <div style={styles.metricCard}>
-            <div style={styles.metricLabel}>Negative Sentiment</div>
-            <div style={{ ...styles.metricValue, color: "#f87171" }}>{metrics.negative}</div>
-            <div style={styles.metricSub}>{((metrics.negative / metrics.total) * 100).toFixed(0)}% negative signals</div>
-          </div>
-          <div style={styles.metricCard}>
-            <div style={styles.metricLabel}>Awaiting Action</div>
-            <div style={{ ...styles.metricValue, color: "#fbbf24" }}>{metrics.actionable}</div>
-            <div style={styles.metricSub}>New + Under Review</div>
-          </div>
-          <div style={styles.metricCard}>
-            <div style={styles.metricLabel}>Being Addressed</div>
-            <div style={{ ...styles.metricValue, color: "#22c55e" }}>{metrics.resolved}</div>
-            <div style={styles.metricSub}>In Progress + Acknowledged</div>
-          </div>
         </div>
 
         {/* Main Grid: Feedback Table + Category Ranking */}
@@ -630,31 +543,9 @@ export default function FeedbackAndSuggestion() {
             <div style={styles.cardHeader}>
               <div style={styles.cardTitle}>
                 <span style={styles.cardTitleIcon}>📋</span>
-                Feedback & Suggestions
+                {activeTab === "feedback" ? "Feedback" : "Suggestions"}
                 <span style={{ fontSize: 12, color: "#475569", fontWeight: 400, marginLeft: 8 }}>{filtered.length} results</span>
               </div>
-              <button
-                onClick={handleClassifyAll}
-                style={{
-                  background: "linear-gradient(135deg, #6366f1, #4f46e5)",
-                  border: "none",
-                  color: "#fff",
-                  borderRadius: 7,
-                  padding: "6px 14px",
-                  fontSize: 11,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  transition: "opacity 0.15s",
-                  boxShadow: "0 2px 6px rgba(99,102,241,0.2)",
-                }}
-                onMouseOver={e => e.currentTarget.style.opacity = "0.85"}
-                onMouseOut={e => e.currentTarget.style.opacity = "1"}
-              >
-                🧠 Classify All
-              </button>
             </div>
             <div style={{ overflowX: "auto" }}>
               <table style={styles.table}>
@@ -664,14 +555,12 @@ export default function FeedbackAndSuggestion() {
                     <th style={styles.th}>Feedback Headline</th>
                     <th style={styles.th}>Chat ID</th>
                     <th style={styles.th}>Category</th>
-                    <th style={styles.th}>Sentiment</th>
                     <th style={{ ...styles.th, cursor: "pointer" }} onClick={() => handleSort("priority")}>Priority <SortArrow field="priority" /></th>
-                    <th style={styles.th}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginated.length === 0 ? (
-                    <tr><td colSpan={7} style={styles.emptyState}>No feedback found matching your filters.</td></tr>
+                    <tr><td colSpan={5} style={styles.emptyState}>No feedback found matching your filters.</td></tr>
                   ) : paginated.map((fb, i) => (
                     <tr
                       key={fb.id}
@@ -700,66 +589,10 @@ export default function FeedbackAndSuggestion() {
                         </span>
                       </td>
                       <td style={styles.td}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <span style={{ color: SENTIMENT_MAP[fb.sentiment]?.color, fontSize: 12 }}>
-                            {SENTIMENT_MAP[fb.sentiment]?.icon} {fb.sentiment}
-                          </span>
-                          {sentimentMeta[fb.id] && (
-                            <span title={sentimentMeta[fb.id].reason} style={{
-                              fontSize: 9,
-                              padding: "1px 5px",
-                              borderRadius: 4,
-                              background: sentimentMeta[fb.id].method === "ai" ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.06)",
-                              color: sentimentMeta[fb.id].method === "ai" ? "#818cf8" : "#64748b",
-                              fontWeight: 600,
-                              cursor: "help",
-                            }}>
-                              {sentimentMeta[fb.id].method === "ai" ? "AI" : "KW"} {sentimentMeta[fb.id].confidence}%
-                            </span>
-                          )}
-                          {classifyingIds.has(fb.id) ? (
-                            <span style={{ fontSize: 10, color: "#6366f1", animation: "pulse 1s infinite" }}>...</span>
-                          ) : (
-                            <span
-                              title="Re-classify with AI"
-                              onClick={(e) => { e.stopPropagation(); handleClassify(fb); }}
-                              style={{ fontSize: 11, cursor: "pointer", color: "#475569", transition: "color 0.15s" }}
-                              onMouseOver={e => e.currentTarget.style.color = "#6366f1"}
-                              onMouseOut={e => e.currentTarget.style.color = "#475569"}
-                            >⟳</span>
-                          )}
-                        </div>
-                      </td>
-                      <td style={styles.td}>
                         <span style={styles.badge(PRIORITY_COLORS[fb.priority].bg, PRIORITY_COLORS[fb.priority].text)}>
                           <span style={styles.dotPulse(PRIORITY_COLORS[fb.priority].dot)}></span>
                           {fb.priority}
                         </span>
-                      </td>
-                      <td style={styles.td}>
-                        <div style={{ position: "relative", display: "inline-block" }}>
-                          <select
-                            value={fb.status}
-                            onClick={e => e.stopPropagation()}
-                            onChange={e => handleStatusChange(fb.id, e.target.value, fb.id.startsWith("FB-"))}
-                            style={{
-                              background: STATUS_COLORS[fb.status]?.bg || "transparent",
-                              color: STATUS_COLORS[fb.status]?.text || "#94a3b8",
-                              border: "1px solid rgba(255,255,255,0.1)",
-                              borderRadius: 8,
-                              padding: "4px 24px 4px 8px",
-                              fontSize: 11,
-                              fontWeight: 600,
-                              cursor: "pointer",
-                              outline: "none",
-                            }}
-                          >
-                            {Object.keys(STATUS_COLORS).map(s => (
-                              <option key={s} value={s} style={{ background: "#1e293b", color: "#f1f5f9" }}>{s}</option>
-                            ))}
-                          </select>
-                          <span style={{ position: "absolute", right: 7, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", fontSize: 8, color: STATUS_COLORS[fb.status]?.text || "#94a3b8" }}>▼</span>
-                        </div>
                       </td>
                     </tr>
                   ))}
@@ -875,97 +708,9 @@ export default function FeedbackAndSuggestion() {
           </div>
         </div>
 
-        {/* Bottom Section: Manual Submission + Action Summary */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 24 }}>
-          {/* Manual Feedback Submission */}
-          <div style={styles.card}>
-            <div style={styles.cardHeader}>
-              <div style={styles.cardTitle}>
-                <span style={styles.cardTitleIcon}>✍️</span>
-                Submit Manual Feedback
-              </div>
-            </div>
-            <div style={{ padding: "20px 22px" }}>
-              {showSuccess && (
-                <div style={{
-                  background: "rgba(34,197,94,0.12)",
-                  border: "1px solid rgba(34,197,94,0.2)",
-                  borderRadius: 10,
-                  padding: "12px 16px",
-                  marginBottom: 16,
-                  fontSize: 13,
-                  color: "#22c55e",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}>
-                  ✅ Feedback submitted successfully!
-                </div>
-              )}
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Feedback Headline *</label>
-                <input
-                  style={styles.input}
-                  placeholder="Brief summary of the feedback..."
-                  value={manualFeedback.headline}
-                  onChange={e => setManualFeedback(p => ({ ...p, headline: e.target.value }))}
-                  onFocus={e => e.target.style.borderColor = "rgba(34,197,94,0.4)"}
-                  onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.08)"}
-                />
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Category</label>
-                  <select style={{ ...styles.filterSelect, width: "100%", height: 40 }} value={manualFeedback.category} onChange={e => setManualFeedback(p => ({ ...p, category: e.target.value }))}>
-                    {Object.keys(CATEGORIES_META).map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Priority</label>
-                  <select style={{ ...styles.filterSelect, width: "100%", height: 40 }} value={manualFeedback.priority} onChange={e => setManualFeedback(p => ({ ...p, priority: e.target.value }))}>
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Low">Low</option>
-                  </select>
-                </div>
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Source</label>
-                <select style={{ ...styles.filterSelect, width: "100%", height: 40 }} value={manualFeedback.source} onChange={e => setManualFeedback(p => ({ ...p, source: e.target.value }))}>
-                  <option value="Internal Observation">Internal Observation</option>
-                  <option value="Customer Call">Customer Call</option>
-                  <option value="Social Media">Social Media</option>
-                  <option value="Email">Email</option>
-                  <option value="App Review">App Review</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Detailed Description *</label>
-                <textarea
-                  style={styles.textarea}
-                  placeholder="Describe the feedback or suggestion in detail..."
-                  value={manualFeedback.description}
-                  onChange={e => setManualFeedback(p => ({ ...p, description: e.target.value }))}
-                  onFocus={e => e.target.style.borderColor = "rgba(34,197,94,0.4)"}
-                  onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.08)"}
-                />
-              </div>
-              <button
-                style={{
-                  ...styles.submitBtn,
-                  opacity: manualFeedback.headline.trim() && manualFeedback.description.trim() ? 1 : 0.4,
-                  cursor: manualFeedback.headline.trim() && manualFeedback.description.trim() ? "pointer" : "not-allowed",
-                }}
-                onClick={handleSubmitManual}
-                disabled={!manualFeedback.headline.trim() || !manualFeedback.description.trim()}
-              >
-                Submit Feedback
-              </button>
-            </div>
-          </div>
-
-          {/* Action Status Overview */}
+        {/* Bottom Section: Pipeline Overview */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20, marginBottom: 24 }}>
+          {/* Pipeline Overview */}
           <div style={styles.card}>
             <div style={styles.cardHeader}>
               <div style={styles.cardTitle}>
@@ -974,54 +719,8 @@ export default function FeedbackAndSuggestion() {
               </div>
             </div>
             <div style={{ padding: "20px 22px" }}>
-              {/* Status Funnel */}
-              {Object.entries(STATUS_COLORS).map(([status, colors]) => {
-                const count = allData.filter(f => f.status === status).length;
-                const pct = allData.length > 0 ? (count / allData.length) * 100 : 0;
-                return (
-                  <div key={status} style={{ marginBottom: 20 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                      <span style={{ fontSize: 13, color: colors.text, fontWeight: 500 }}>{status}</span>
-                      <span style={{ fontSize: 13, color: "#64748b" }}>{count} ({pct.toFixed(0)}%)</span>
-                    </div>
-                    <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 6, height: 10, overflow: "hidden" }}>
-                      <div style={{
-                        height: "100%",
-                        borderRadius: 6,
-                        background: `linear-gradient(90deg, ${colors.text}, ${colors.text}88)`,
-                        width: `${pct}%`,
-                        transition: "width 0.6s ease",
-                      }} />
-                    </div>
-                  </div>
-                );
-              })}
-
-              {/* Sentiment Breakdown */}
-              <div style={{ marginTop: 28, paddingTop: 20, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#94a3b8", marginBottom: 14 }}>Sentiment Breakdown</div>
-                <div style={{ display: "flex", gap: 12 }}>
-                  {["Positive", "Neutral", "Negative"].map(s => {
-                    const count = allData.filter(f => f.sentiment === s).length;
-                    return (
-                      <div key={s} style={{
-                        flex: 1,
-                        background: `${SENTIMENT_MAP[s].color}11`,
-                        border: `1px solid ${SENTIMENT_MAP[s].color}22`,
-                        borderRadius: 10,
-                        padding: "14px 12px",
-                        textAlign: "center",
-                      }}>
-                        <div style={{ fontSize: 22, fontWeight: 700, color: SENTIMENT_MAP[s].color }}>{count}</div>
-                        <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{s}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
               {/* Priority Breakdown */}
-              <div style={{ marginTop: 20, paddingTop: 20, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              <div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: "#94a3b8", marginBottom: 14 }}>Priority Distribution</div>
                 <div style={{ display: "flex", gap: 12 }}>
                   {["High", "Medium", "Low"].map(p => {
@@ -1057,31 +756,6 @@ export default function FeedbackAndSuggestion() {
               <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
                 <span style={styles.badge(PRIORITY_COLORS[selectedFeedback.priority].bg, PRIORITY_COLORS[selectedFeedback.priority].text)}>
                   {selectedFeedback.priority} Priority
-                </span>
-                <div style={{ position: "relative", display: "inline-block" }}>
-                  <select
-                    value={selectedFeedback.status}
-                    onChange={e => handleStatusChange(selectedFeedback.id, e.target.value, selectedFeedback.id.startsWith("FB-"))}
-                    style={{
-                      background: STATUS_COLORS[selectedFeedback.status]?.bg || "transparent",
-                      color: STATUS_COLORS[selectedFeedback.status]?.text || "#94a3b8",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: 8,
-                      padding: "4px 26px 4px 10px",
-                      fontSize: 12,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      outline: "none",
-                    }}
-                  >
-                    {Object.keys(STATUS_COLORS).map(s => (
-                      <option key={s} value={s} style={{ background: "#1e293b", color: "#f1f5f9" }}>{s}</option>
-                    ))}
-                  </select>
-                  <span style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", fontSize: 8, color: STATUS_COLORS[selectedFeedback.status]?.text || "#94a3b8" }}>▼</span>
-                </div>
-                <span style={{ fontSize: 12, color: SENTIMENT_MAP[selectedFeedback.sentiment]?.color }}>
-                  {SENTIMENT_MAP[selectedFeedback.sentiment]?.icon} {selectedFeedback.sentiment}
                 </span>
               </div>
               <h2 style={{ fontSize: 18, fontWeight: 600, color: "#f1f5f9", margin: "0 0 6px", lineHeight: 1.4 }}>{selectedFeedback.headline}</h2>
