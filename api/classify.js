@@ -34,6 +34,10 @@ export default async function handler(req, res) {
 - "sentiment": one of "Positive", "Negative", or "Neutral"
 - "confidence": a number 0-100 representing confidence
 - "reason": a one-sentence explanation of why this sentiment was chosen
+- "priority": one of "High", "Medium", or "Low" based on these rules:
+  - "High": bugs, broken features, money/payout issues, security concerns, account access problems, data loss, compliance violations
+  - "Medium": feature requests, documentation issues, process improvements, UX complaints, non-critical suggestions
+  - "Low": positive feedback, compliments, minor cosmetic requests, general praise
 
 Only return valid JSON, no markdown or extra text.`,
           },
@@ -59,6 +63,7 @@ Only return valid JSON, no markdown or extra text.`,
       sentiment: result.sentiment,
       confidence: result.confidence,
       reason: result.reason,
+      priority: result.priority || "Medium",
       tokens_used: data.usage?.total_tokens || 0,
     });
   } catch (err) {

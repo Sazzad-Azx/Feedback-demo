@@ -402,13 +402,14 @@ export default function FeedbackAndSuggestion() {
     setClassifyingIds(prev => new Set([...prev, fb.id]));
     try {
       const result = await classifySentiment(fb.fullText);
-      // Update sentiment in feedbackData or manualEntries
-      setManualEntries(prev => prev.map(f => f.id === fb.id ? { ...f, sentiment: result.sentiment } : f));
+      // Update sentiment and priority in manual entries
+      setManualEntries(prev => prev.map(f => f.id === fb.id ? { ...f, sentiment: result.sentiment, priority: result.priority || f.priority } : f));
       // For mock data, we store overrides
-      setSentimentMeta(prev => ({ ...prev, [fb.id]: { confidence: result.confidence, reason: result.reason, method: result.method } }));
-      // Also update mock feedback sentiment if it's from mock data
+      setSentimentMeta(prev => ({ ...prev, [fb.id]: { confidence: result.confidence, reason: result.reason, method: result.method, priority: result.priority } }));
+      // Also update mock feedback sentiment and priority if it's from mock data
       if (fb.id.startsWith("FB-")) {
         setSentimentOverrides(prev => ({ ...prev, [fb.id]: result.sentiment }));
+        if (result.priority) setPriorityOverrides(prev => ({ ...prev, [fb.id]: result.priority }));
       }
     } catch (err) {
       console.error("Classification failed:", err);
@@ -418,11 +419,29 @@ export default function FeedbackAndSuggestion() {
   }, []);
 
   const [sentimentOverrides, setSentimentOverrides] = useState({});
+  const [priorityOverrides, setPriorityOverrides] = useState({});
+  const [statusOverrides, setStatusOverrides] = useState({});
+
+  const handleStatusChange = useCallback((id, newStatus, isMock) => {
+    if (isMock) {
+      setStatusOverrides(prev => ({ ...prev, [id]: newStatus }));
+    } else {
+      setManualEntries(prev => prev.map(f => f.id === id ? { ...f, status: newStatus } : f));
+    }
+    // Also update selectedFeedback if it's open
+    setSelectedFeedback(prev => prev && prev.id === id ? { ...prev, status: newStatus } : prev);
+  }, []);
 
   const allData = useMemo(() => {
-    const base = feedbackData.map(f => sentimentOverrides[f.id] ? { ...f, sentiment: sentimentOverrides[f.id] } : f);
+    const base = feedbackData.map(f => {
+      let updated = f;
+      if (sentimentOverrides[f.id]) updated = { ...updated, sentiment: sentimentOverrides[f.id] };
+      if (priorityOverrides[f.id]) updated = { ...updated, priority: priorityOverrides[f.id] };
+      if (statusOverrides[f.id]) updated = { ...updated, status: statusOverrides[f.id] };
+      return updated;
+    });
     return [...base, ...manualEntries];
-  }, [feedbackData, manualEntries, sentimentOverrides]);
+  }, [feedbackData, manualEntries, sentimentOverrides, priorityOverrides, statusOverrides]);
 
   const filtered = useMemo(() => {
     let d = allData;
@@ -611,7 +630,7 @@ export default function FeedbackAndSuggestion() {
             <div style={styles.cardHeader}>
               <div style={styles.cardTitle}>
                 <span style={styles.cardTitleIcon}>📋</span>
-                AI-Identified Feedback & Suggestions
+                Feedback & Suggestions
                 <span style={{ fontSize: 12, color: "#475569", fontWeight: 400, marginLeft: 8 }}>{filtered.length} results</span>
               </div>
               <button
@@ -718,9 +737,29 @@ export default function FeedbackAndSuggestion() {
                         </span>
                       </td>
                       <td style={styles.td}>
-                        <span style={styles.badge(STATUS_COLORS[fb.status].bg, STATUS_COLORS[fb.status].text)}>
-                          {fb.status}
-                        </span>
+                        <div style={{ position: "relative", display: "inline-block" }}>
+                          <select
+                            value={fb.status}
+                            onClick={e => e.stopPropagation()}
+                            onChange={e => handleStatusChange(fb.id, e.target.value, fb.id.startsWith("FB-"))}
+                            style={{
+                              background: STATUS_COLORS[fb.status]?.bg || "transparent",
+                              color: STATUS_COLORS[fb.status]?.text || "#94a3b8",
+                              border: "1px solid rgba(255,255,255,0.1)",
+                              borderRadius: 8,
+                              padding: "4px 24px 4px 8px",
+                              fontSize: 11,
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              outline: "none",
+                            }}
+                          >
+                            {Object.keys(STATUS_COLORS).map(s => (
+                              <option key={s} value={s} style={{ background: "#1e293b", color: "#f1f5f9" }}>{s}</option>
+                            ))}
+                          </select>
+                          <span style={{ position: "absolute", right: 7, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", fontSize: 8, color: STATUS_COLORS[fb.status]?.text || "#94a3b8" }}>▼</span>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1019,9 +1058,28 @@ export default function FeedbackAndSuggestion() {
                 <span style={styles.badge(PRIORITY_COLORS[selectedFeedback.priority].bg, PRIORITY_COLORS[selectedFeedback.priority].text)}>
                   {selectedFeedback.priority} Priority
                 </span>
-                <span style={styles.badge(STATUS_COLORS[selectedFeedback.status].bg, STATUS_COLORS[selectedFeedback.status].text)}>
-                  {selectedFeedback.status}
-                </span>
+                <div style={{ position: "relative", display: "inline-block" }}>
+                  <select
+                    value={selectedFeedback.status}
+                    onChange={e => handleStatusChange(selectedFeedback.id, e.target.value, selectedFeedback.id.startsWith("FB-"))}
+                    style={{
+                      background: STATUS_COLORS[selectedFeedback.status]?.bg || "transparent",
+                      color: STATUS_COLORS[selectedFeedback.status]?.text || "#94a3b8",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 8,
+                      padding: "4px 26px 4px 10px",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      outline: "none",
+                    }}
+                  >
+                    {Object.keys(STATUS_COLORS).map(s => (
+                      <option key={s} value={s} style={{ background: "#1e293b", color: "#f1f5f9" }}>{s}</option>
+                    ))}
+                  </select>
+                  <span style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", fontSize: 8, color: STATUS_COLORS[selectedFeedback.status]?.text || "#94a3b8" }}>▼</span>
+                </div>
                 <span style={{ fontSize: 12, color: SENTIMENT_MAP[selectedFeedback.sentiment]?.color }}>
                   {SENTIMENT_MAP[selectedFeedback.sentiment]?.icon} {selectedFeedback.sentiment}
                 </span>

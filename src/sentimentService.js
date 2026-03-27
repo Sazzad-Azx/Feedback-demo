@@ -1,3 +1,36 @@
+// ─── Keyword-based priority detection ─────────────────────────────
+const HIGH_PRIORITY_WORDS = [
+  "bug", "broken", "crash", "error", "fail", "unable", "locked",
+  "security", "breach", "hack", "unauthorized", "payout", "payment",
+  "money", "balance", "withdraw", "refund", "fraud", "loss", "missing",
+  "urgent", "critical", "blocked", "denied", "rejected", "anxiety",
+  "compliance", "legal", "escalat",
+];
+
+const LOW_PRIORITY_WORDS = [
+  "great", "love", "excellent", "amazing", "appreciated", "praise",
+  "improved", "fantastic", "awesome", "wonderful", "perfect", "thank",
+  "thanks", "happy", "pleased", "impressed", "recommend", "best",
+  "cosmetic", "minor", "nice to have", "optional",
+];
+
+export function keywordPriority(text) {
+  const lower = text.toLowerCase();
+  const words = lower.split(/\W+/);
+
+  let highScore = 0;
+  let lowScore = 0;
+
+  words.forEach((w) => {
+    if (HIGH_PRIORITY_WORDS.some((hw) => w.includes(hw))) highScore++;
+    if (LOW_PRIORITY_WORDS.includes(w)) lowScore++;
+  });
+
+  if (highScore >= 2 || (highScore >= 1 && lowScore === 0)) return "High";
+  if (lowScore >= 2 && highScore === 0) return "Low";
+  return "Medium";
+}
+
 // ─── Keyword-based fallback (instant, no API cost) ───────────────
 const POSITIVE_WORDS = [
   "great", "love", "excellent", "amazing", "improved", "appreciated",
@@ -62,6 +95,7 @@ export function keywordSentiment(text) {
     sentiment,
     confidence,
     reason: `Keyword analysis: ${posScore} positive, ${negScore} negative signals`,
+    priority: keywordPriority(text),
     method: "keyword",
   };
 }
