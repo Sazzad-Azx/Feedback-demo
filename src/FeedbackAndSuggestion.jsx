@@ -434,20 +434,41 @@ export default function FeedbackAndSuggestion() {
     return { total, highPriority };
   }, [tabData]);
 
-  // ─── Common topics grouping (from AI-assigned common_topic field) ──
+  // ─── Common topics grouping (last 6 months only, matches API logic) ──
+  const sixMonthCutoff = useMemo(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 6);
+    return d.toISOString().slice(0, 10);
+  }, []);
+
   const commonThemes = useMemo(() => {
+    const recentData = tabData.filter(item => item.date >= sixMonthCutoff);
     const groups = {};
-    tabData.forEach(item => {
+    recentData.forEach(item => {
       const topic = item.common_topic;
       if (!topic) return;
-      if (!groups[topic]) groups[topic] = { theme: topic, count: 0, items: [] };
+      if (!groups[topic]) groups[topic] = { theme: topic, count: 0, items: [], latestDate: item.date };
       groups[topic].count++;
       groups[topic].items.push(item);
+      if (item.date > groups[topic].latestDate) groups[topic].latestDate = item.date;
     });
     return Object.values(groups)
       .filter(g => g.count >= 2)
       .sort((a, b) => b.count - a.count);
-  }, [tabData]);
+  }, [tabData, sixMonthCutoff]);
+
+  // Helper: build existingTopics payload for /api/group-feedback (production use)
+  // Sends { topic, date } pairs so the API filters to last 6 months server-side too
+  const getExistingTopicsForAPI = () => {
+    const topicMap = {};
+    feedbackData.forEach(item => {
+      if (!item.common_topic) return;
+      if (!topicMap[item.common_topic] || item.date > topicMap[item.common_topic]) {
+        topicMap[item.common_topic] = item.date;
+      }
+    });
+    return Object.entries(topicMap).map(([topic, date]) => ({ topic, date }));
+  };
 
   const handleSort = (field) => {
     if (sortBy === field) setSortDir(d => d === "desc" ? "asc" : "desc");

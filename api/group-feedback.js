@@ -15,8 +15,30 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "OPENAI_API_KEY not configured" });
   }
 
-  const topicList = (existingTopics || []).length > 0
-    ? existingTopics.map((t, i) => `${i + 1}. "${t}"`).join("\n")
+  // ─── 6-month optimization ─────────────────────────────────────
+  // existingTopics is expected as an array of { topic, date } objects
+  // where date is the most recent feedback date for that topic.
+  // We only send topics from the last 6 months to reduce token usage.
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  const cutoff = sixMonthsAgo.toISOString().slice(0, 10);
+
+  let recentTopics = [];
+  if (Array.isArray(existingTopics) && existingTopics.length > 0) {
+    // Support both formats: array of strings (legacy) or array of {topic, date}
+    recentTopics = existingTopics
+      .filter(t => {
+        if (typeof t === "string") return true; // legacy format — include all
+        return t.date >= cutoff; // only include topics with activity in last 6 months
+      })
+      .map(t => (typeof t === "string" ? t : t.topic));
+
+    // Deduplicate
+    recentTopics = [...new Set(recentTopics)];
+  }
+
+  const topicList = recentTopics.length > 0
+    ? recentTopics.map((t, i) => `${i + 1}. "${t}"`).join("\n")
     : "(none yet)";
 
   try {
@@ -37,7 +59,7 @@ export default async function handler(req, res) {
 
 IMPORTANT: Only process genuine feedback or suggestions — where the customer is explicitly giving their opinion, recommendation, or request for improvement directed at us. If the text is just a problem report or support request (e.g., "my coupon code isn't working", "I can't log in"), return {"common_topic": null, "is_feedback": false}.
 
-Here are the existing topics:
+Here are the existing topics (from the last 6 months only):
 ${topicList}
 
 Rules:
@@ -66,6 +88,7 @@ Rules:
     return res.status(200).json({
       common_topic: result.common_topic || null,
       is_feedback: result.is_feedback ?? true,
+      topics_compared: recentTopics.length,
       tokens_used: data.usage?.total_tokens || 0,
     });
   } catch (err) {
