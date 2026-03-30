@@ -1,23 +1,38 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import DateRangePicker from "./DateRangePicker";
 
 // ─── Mock Data ───────────────────────────────────────────────────
 const MOCK_FEEDBACK = [
-  { id: "FB-001", chatId: "CNV-88234", date: "2026-03-26", headline: "Login issues after password reset on mobile app", fullText: "Customer reported that after resetting their password through the mobile app, they were unable to log back in for over 30 minutes. The session token wasn't refreshing properly. They suggested adding a 'force logout all devices' option during password reset.", category: "Account Related Issue", sentiment: "Negative", priority: "High", status: "Under Review", type: "feedback" },
-  { id: "FB-002", chatId: "CNV-88190", date: "2026-03-26", headline: "Requested dark mode for the trading dashboard", fullText: "Customer mentioned eye strain during late-night trading sessions and suggested implementing a dark mode toggle for the main trading dashboard. They referenced competitor platforms that already offer this.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "New", type: "suggestion" },
-  { id: "FB-003", chatId: "CNV-88102", date: "2026-03-25", headline: "Payout processing time is too slow compared to competitors", fullText: "Customer expressed frustration that payouts take 3-5 business days while competitors offer 24-hour processing. Suggested partnering with faster payment processors or offering crypto payout options for instant withdrawal.", category: "Payout Related Issue", sentiment: "Negative", priority: "High", status: "Escalated", type: "feedback" },
-  { id: "FB-004", chatId: "CNV-87998", date: "2026-03-25", headline: "Appreciated the quick resolution of account verification", fullText: "Customer praised the support team for resolving their KYC verification issue within 10 minutes. They suggested this level of service should be highlighted in marketing materials.", category: "KYC_Issue", sentiment: "Positive", priority: "Low", status: "Acknowledged", type: "feedback" },
-  { id: "FB-005", chatId: "CNV-87845", date: "2026-03-24", headline: "Coupon code not applying at checkout for scaling plan", fullText: "Multiple customers have reported that promotional coupon codes for the scaling plan are not being applied correctly at checkout. The discount shows briefly then disappears when the payment page loads.", category: "Offers & Coupons", sentiment: "Negative", priority: "High", status: "In Progress", type: "feedback" },
-  { id: "FB-006", chatId: "CNV-87790", date: "2026-03-24", headline: "Suggestion to add MT5 platform support", fullText: "Customer strongly suggested adding MetaTrader 5 support alongside MT4. They mentioned that many professional traders prefer MT5 for its advanced charting and multi-asset capabilities.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "Under Review", type: "suggestion" },
-  { id: "FB-007", chatId: "CNV-87701", date: "2026-03-23", headline: "Scaling rules documentation is confusing and outdated", fullText: "Customer found the scaling rules documentation contradictory and hard to follow. Specific sections about profit targets and drawdown limits had conflicting information. Suggested a visual flowchart instead of text-heavy docs.", category: "Rules & Scaling", sentiment: "Negative", priority: "Medium", status: "In Progress", type: "feedback" },
-  { id: "FB-008", chatId: "CNV-87650", date: "2026-03-23", headline: "Refund policy needs clearer communication upfront", fullText: "Customer was surprised by the refund policy terms after purchase. They suggested displaying refund conditions more prominently on the pricing page and during checkout, not just in fine print.", category: "Payment & Refunds", sentiment: "Negative", priority: "Medium", status: "New", type: "suggestion" },
-  { id: "FB-009", chatId: "CNV-87588", date: "2026-03-22", headline: "Live chat wait times have improved significantly", fullText: "Returning customer noted that live chat response times have dropped from 15+ minutes to under 3 minutes over the past month. They appreciated the improvement and suggested maintaining this standard.", category: "Support", sentiment: "Positive", priority: "Low", status: "Acknowledged", type: "feedback" },
-  { id: "FB-010", chatId: "CNV-87490", date: "2026-03-22", headline: "Account dashboard shows incorrect balance after trade close", fullText: "Customer reported a UI bug where their account balance didn't update immediately after closing a profitable trade. The correct balance only appeared after a manual page refresh. This caused anxiety about whether the trade was properly recorded.", category: "Account Related Issue", sentiment: "Negative", priority: "High", status: "Escalated", type: "feedback" },
-  { id: "FB-011", chatId: "CNV-87402", date: "2026-03-21", headline: "Need better notification system for margin calls", fullText: "Customer nearly missed a margin call because the only notification was an in-app popup they didn't see. Suggested adding email, SMS, and push notification options for critical account alerts.", category: "Platform & Trading", sentiment: "Negative", priority: "High", status: "Under Review", type: "suggestion" },
-  { id: "FB-012", chatId: "CNV-87355", date: "2026-03-21", headline: "KYC re-verification process is unnecessarily repetitive", fullText: "Long-time customer was asked to re-verify KYC documents they had already submitted. The process required uploading the same documents again. Suggested implementing a document retention policy for verified users.", category: "KYC_Issue", sentiment: "Negative", priority: "Medium", status: "New", type: "feedback" },
-  { id: "FB-013", chatId: "CNV-87290", date: "2026-03-20", headline: "Suggest adding a demo/paper trading mode for new users", fullText: "New customer suggested offering a paper trading or demo mode so users can familiarize themselves with the platform before committing real capital. This would reduce early churn and support tickets from confused newcomers.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "New", type: "suggestion" },
-  { id: "FB-014", chatId: "CNV-87200", date: "2026-03-20", headline: "Weekend support availability is needed for global traders", fullText: "Customer in a different timezone emphasized the need for weekend support since markets they trade are open on weekends. Suggested at least limited weekend chat hours or an AI chatbot for common issues.", category: "Support", sentiment: "Neutral", priority: "Medium", status: "Under Review", type: "suggestion" },
-  { id: "FB-015", chatId: "CNV-87120", date: "2026-03-19", headline: "Promotional email promised discount not honored at checkout", fullText: "Customer received a promotional email with a 20% discount code but the code was rejected at checkout. Support confirmed the promotion had ended the day before the email was sent. Customer suggested better coordination between marketing and system teams.", category: "Offers & Coupons", sentiment: "Negative", priority: "High", status: "Escalated", type: "feedback" },
+  { id: "FB-001", chatId: "CNV-88234", date: "2026-03-26", headline: "Login issues after password reset on mobile app", fullText: "Customer reported that after resetting their password through the mobile app, they were unable to log back in for over 30 minutes. The session token wasn't refreshing properly. They suggested adding a 'force logout all devices' option during password reset.", category: "Account Related Issue", sentiment: "Negative", priority: "High", status: "Under Review", type: "feedback", common_topic: "Login fails after password reset" },
+  { id: "FB-002", chatId: "CNV-88190", date: "2026-03-26", headline: "Requested dark mode for the trading dashboard", fullText: "Customer mentioned eye strain during late-night trading sessions and suggested implementing a dark mode toggle for the main trading dashboard. They referenced competitor platforms that already offer this.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "New", type: "suggestion", common_topic: "Add dark mode to dashboard" },
+  { id: "FB-003", chatId: "CNV-88102", date: "2026-03-25", headline: "Payout processing time is too slow compared to competitors", fullText: "Customer expressed frustration that payouts take 3-5 business days while competitors offer 24-hour processing. Suggested partnering with faster payment processors or offering crypto payout options for instant withdrawal.", category: "Payout Related Issue", sentiment: "Negative", priority: "High", status: "Escalated", type: "feedback", common_topic: "Slow payout processing" },
+  { id: "FB-004", chatId: "CNV-87998", date: "2026-03-25", headline: "Appreciated the quick resolution of account verification", fullText: "Customer praised the support team for resolving their KYC verification issue within 10 minutes. They suggested this level of service should be highlighted in marketing materials.", category: "KYC_Issue", sentiment: "Positive", priority: "Low", status: "Acknowledged", type: "feedback", common_topic: "Praise for quick KYC resolution" },
+  { id: "FB-005", chatId: "CNV-87845", date: "2026-03-24", headline: "Coupon code not applying at checkout for scaling plan", fullText: "Multiple customers have reported that promotional coupon codes for the scaling plan are not being applied correctly at checkout. The discount shows briefly then disappears when the payment page loads.", category: "Offers & Coupons", sentiment: "Negative", priority: "High", status: "In Progress", type: "feedback", common_topic: null },
+  { id: "FB-006", chatId: "CNV-87790", date: "2026-03-24", headline: "Suggestion to add MT5 platform support", fullText: "Customer strongly suggested adding MetaTrader 5 support alongside MT4. They mentioned that many professional traders prefer MT5 for its advanced charting and multi-asset capabilities.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "Under Review", type: "suggestion", common_topic: "Add MetaTrader 5 support" },
+  { id: "FB-007", chatId: "CNV-87701", date: "2026-03-23", headline: "Scaling rules documentation is confusing and outdated", fullText: "Customer found the scaling rules documentation contradictory and hard to follow. Specific sections about profit targets and drawdown limits had conflicting information. Suggested a visual flowchart instead of text-heavy docs.", category: "Rules & Scaling", sentiment: "Negative", priority: "Medium", status: "In Progress", type: "feedback", common_topic: "Scaling rules unclear or contradictory" },
+  { id: "FB-008", chatId: "CNV-87650", date: "2026-03-23", headline: "Refund policy needs clearer communication upfront", fullText: "Customer was surprised by the refund policy terms after purchase. They suggested displaying refund conditions more prominently on the pricing page and during checkout, not just in fine print.", category: "Payment & Refunds", sentiment: "Negative", priority: "Medium", status: "New", type: "suggestion", common_topic: "Refund policy not visible before purchase" },
+  { id: "FB-009", chatId: "CNV-87588", date: "2026-03-22", headline: "Live chat wait times have improved significantly", fullText: "Returning customer noted that live chat response times have dropped from 15+ minutes to under 3 minutes over the past month. They appreciated the improvement and suggested maintaining this standard.", category: "Support", sentiment: "Positive", priority: "Low", status: "Acknowledged", type: "feedback", common_topic: "Improved live chat response times" },
+  { id: "FB-010", chatId: "CNV-87490", date: "2026-03-22", headline: "Account dashboard shows incorrect balance after trade close", fullText: "Customer reported a UI bug where their account balance didn't update immediately after closing a profitable trade. The correct balance only appeared after a manual page refresh. This caused anxiety about whether the trade was properly recorded.", category: "Account Related Issue", sentiment: "Negative", priority: "High", status: "Escalated", type: "feedback", common_topic: null },
+  { id: "FB-011", chatId: "CNV-87402", date: "2026-03-21", headline: "Need better notification system for margin calls", fullText: "Customer nearly missed a margin call because the only notification was an in-app popup they didn't see. Suggested adding email, SMS, and push notification options for critical account alerts.", category: "Platform & Trading", sentiment: "Negative", priority: "High", status: "Under Review", type: "suggestion", common_topic: "Better margin call notifications needed" },
+  { id: "FB-012", chatId: "CNV-87355", date: "2026-03-21", headline: "KYC re-verification process is unnecessarily repetitive", fullText: "Long-time customer was asked to re-verify KYC documents they had already submitted. The process required uploading the same documents again. Suggested implementing a document retention policy for verified users.", category: "KYC_Issue", sentiment: "Negative", priority: "Medium", status: "New", type: "feedback", common_topic: "Repetitive KYC re-verification" },
+  { id: "FB-013", chatId: "CNV-87290", date: "2026-03-20", headline: "Suggest adding a demo/paper trading mode for new users", fullText: "New customer suggested offering a paper trading or demo mode so users can familiarize themselves with the platform before committing real capital. This would reduce early churn and support tickets from confused newcomers.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "New", type: "suggestion", common_topic: "Add demo or paper trading mode" },
+  { id: "FB-014", chatId: "CNV-87200", date: "2026-03-20", headline: "Weekend support availability is needed for global traders", fullText: "Customer in a different timezone emphasized the need for weekend support since markets they trade are open on weekends. Suggested at least limited weekend chat hours or an AI chatbot for common issues.", category: "Support", sentiment: "Neutral", priority: "Medium", status: "Under Review", type: "suggestion", common_topic: "Weekend support for global traders" },
+  { id: "FB-015", chatId: "CNV-87120", date: "2026-03-19", headline: "Promotional email promised discount not honored at checkout", fullText: "Customer received a promotional email with a 20% discount code but the code was rejected at checkout. Support confirmed the promotion had ended the day before the email was sent. Customer suggested better coordination between marketing and system teams.", category: "Offers & Coupons", sentiment: "Negative", priority: "High", status: "Escalated", type: "feedback", common_topic: "Coupon codes not working at checkout" },
+  { id: "FB-016", chatId: "CNV-87050", date: "2026-03-19", headline: "Can't log in after changing my password on phone", fullText: "After updating my password using the mobile browser, I kept getting 'invalid credentials' for almost an hour. Had to clear cookies and try again. Very frustrating experience.", category: "Account Related Issue", sentiment: "Negative", priority: "High", status: "New", type: "feedback", common_topic: null },
+  { id: "FB-017", chatId: "CNV-86990", date: "2026-03-18", headline: "Password reset didn't work — stuck on login screen", fullText: "Reset my password via email link but the new password wasn't accepted on the login page. Tried multiple browsers. Eventually worked after 45 minutes. Please fix this.", category: "Account Related Issue", sentiment: "Negative", priority: "High", status: "Under Review", type: "feedback", common_topic: null },
+  { id: "FB-018", chatId: "CNV-86920", date: "2026-03-18", headline: "Payout took 5 days, competitors do it in 24 hours", fullText: "I've been waiting 5 business days for my payout. Other prop firms process withdrawals within a day. This is unacceptable for a platform of this size. Need faster payment rails.", category: "Payout Related Issue", sentiment: "Negative", priority: "High", status: "New", type: "feedback", common_topic: "Slow payout processing" },
+  { id: "FB-019", chatId: "CNV-86880", date: "2026-03-18", headline: "Withdrawal processing is way too slow", fullText: "My withdrawal request has been pending for 4 days now. This is really slow compared to what other platforms offer. Please consider adding instant payout options.", category: "Payout Related Issue", sentiment: "Negative", priority: "High", status: "Under Review", type: "feedback", common_topic: "Slow payout processing" },
+  { id: "FB-020", chatId: "CNV-86800", date: "2026-03-17", headline: "Discount code from newsletter didn't work at checkout", fullText: "Got a 15% off coupon in the weekly newsletter but it shows 'invalid code' when I try to apply it at checkout. This has happened twice now with different codes.", category: "Offers & Coupons", sentiment: "Negative", priority: "Medium", status: "New", type: "feedback", common_topic: null },
+  { id: "FB-021", chatId: "CNV-86750", date: "2026-03-17", headline: "Balance not updating after closing trades", fullText: "Closed three profitable trades but my balance still shows the old amount. Had to refresh the page manually each time. The dashboard should update in real-time.", category: "Account Related Issue", sentiment: "Negative", priority: "High", status: "In Progress", type: "feedback", common_topic: null },
+  { id: "FB-022", chatId: "CNV-86700", date: "2026-03-17", headline: "Please add MetaTrader 5 — MT4 feels outdated", fullText: "MT4 is great but MT5 has so many more features. Advanced charting, more timeframes, better backtesting. Most serious traders have moved to MT5. Please add support.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "New", type: "suggestion", common_topic: "Add MetaTrader 5 support" },
+  { id: "FB-023", chatId: "CNV-86650", date: "2026-03-16", headline: "Suggestion: Add a practice/demo account for beginners", fullText: "As a new trader, I'd love a demo mode to learn the platform without risking real money. It would help reduce confusion and support tickets from new users.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "Under Review", type: "suggestion", common_topic: "Add demo or paper trading mode" },
+  { id: "FB-024", chatId: "CNV-86600", date: "2026-03-16", headline: "Dark mode option would be great for night trading", fullText: "Trading late at night with the bright interface causes eye strain. A dark theme toggle on the dashboard would be really helpful. Many competitors already have this.", category: "Platform & Trading", sentiment: "Neutral", priority: "Low", status: "New", type: "suggestion", common_topic: "Add dark mode to dashboard" },
+  { id: "FB-025", chatId: "CNV-86550", date: "2026-03-16", headline: "Need SMS/email alerts for margin calls, not just popup", fullText: "I almost missed a margin call because it was only shown as an in-app notification. Please add SMS and email alerts for critical account events.", category: "Platform & Trading", sentiment: "Negative", priority: "High", status: "New", type: "suggestion", common_topic: "Better margin call notifications needed" },
+  { id: "FB-026", chatId: "CNV-86500", date: "2026-03-15", headline: "Refund terms should be shown before purchase, not after", fullText: "I only found out about the strict refund policy after paying. This information should be clearly visible on the pricing page, not buried in terms and conditions.", category: "Payment & Refunds", sentiment: "Negative", priority: "Medium", status: "New", type: "suggestion", common_topic: "Refund policy not visible before purchase" },
+  { id: "FB-027", chatId: "CNV-86450", date: "2026-03-15", headline: "Weekend live chat support needed for international traders", fullText: "Markets I trade are open on weekends but support is closed. At least a chatbot or limited weekend hours would help. Many of us trade from different timezones.", category: "Support", sentiment: "Neutral", priority: "Medium", status: "New", type: "suggestion", common_topic: "Weekend support for global traders" },
+  { id: "FB-028", chatId: "CNV-86400", date: "2026-03-15", headline: "Paper trading feature would help new users get started", fullText: "A simulated trading environment would be amazing for onboarding. Let new users try the platform risk-free before committing funds. This would also reduce early churn.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "New", type: "suggestion", common_topic: "Add demo or paper trading mode" },
+  { id: "FB-029", chatId: "CNV-86350", date: "2026-03-14", headline: "KYC documents requested again after already being verified", fullText: "I verified my identity 6 months ago and now I'm being asked to upload everything again. Why don't you retain verified documents? This is a waste of time.", category: "KYC_Issue", sentiment: "Negative", priority: "Medium", status: "New", type: "feedback", common_topic: "Repetitive KYC re-verification" },
+  { id: "FB-030", chatId: "CNV-86300", date: "2026-03-14", headline: "Scaling rules page has contradictory information", fullText: "The profit target section says 8% but later says 10%. The drawdown rules are also confusing. Please create a simple visual guide instead of walls of text.", category: "Rules & Scaling", sentiment: "Negative", priority: "Medium", status: "New", type: "feedback", common_topic: "Scaling rules unclear or contradictory" },
 ];
 
 const CATEGORIES_META = {
@@ -373,6 +388,7 @@ export default function FeedbackAndSuggestion() {
   const [dateTo, setDateTo] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
   const [activeTab, setActiveTab] = useState("feedback");
+  const [expandedTheme, setExpandedTheme] = useState(null);
   const ITEMS_PER_PAGE = 8;
 
   const allData = useMemo(() => {
@@ -418,6 +434,21 @@ export default function FeedbackAndSuggestion() {
     return { total, highPriority };
   }, [tabData]);
 
+  // ─── Common topics grouping (from AI-assigned common_topic field) ──
+  const commonThemes = useMemo(() => {
+    const groups = {};
+    tabData.forEach(item => {
+      const topic = item.common_topic;
+      if (!topic) return;
+      if (!groups[topic]) groups[topic] = { theme: topic, count: 0, items: [] };
+      groups[topic].count++;
+      groups[topic].items.push(item);
+    });
+    return Object.values(groups)
+      .filter(g => g.count >= 2)
+      .sort((a, b) => b.count - a.count);
+  }, [tabData]);
+
   const handleSort = (field) => {
     if (sortBy === field) setSortDir(d => d === "desc" ? "asc" : "desc");
     else { setSortBy(field); setSortDir("desc"); }
@@ -461,7 +492,7 @@ export default function FeedbackAndSuggestion() {
           ].map(tab => (
             <button
               key={tab.key}
-              onClick={() => { setActiveTab(tab.key); setCurrentPage(1); setFilterCategory("All"); }}
+              onClick={() => { setActiveTab(tab.key); setCurrentPage(1); setFilterCategory("All"); setExpandedTheme(null); }}
               style={{
                 padding: "8px 24px",
                 fontSize: 13,
@@ -707,6 +738,141 @@ export default function FeedbackAndSuggestion() {
             </div>
           </div>
         </div>
+
+        {/* Common Feedback / Suggestion Table */}
+        {commonThemes.length > 0 && (
+          <div style={{ ...styles.card, marginBottom: 24 }}>
+            <div style={styles.cardHeader}>
+              <div style={styles.cardTitle}>
+                <span style={styles.cardTitleIcon}>🔁</span>
+                Common {activeTab === "feedback" ? "Feedback" : "Suggestions"}
+                <span style={{ fontSize: 12, color: "#475569", fontWeight: 400, marginLeft: 8 }}>
+                  {commonThemes.length} recurring {commonThemes.length === 1 ? "pattern" : "patterns"} detected
+                </span>
+              </div>
+            </div>
+            <div style={{ overflowX: "auto" }}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={{ ...styles.th, width: 40 }}>#</th>
+                    <th style={styles.th}>Recurring Topic</th>
+                    <th style={{ ...styles.th, width: 100, textAlign: "center" }}>Occurrences</th>
+                    <th style={{ ...styles.th, width: 200 }}>Frequency</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {commonThemes.map((t, i) => {
+                    const maxCount = commonThemes[0]?.count || 1;
+                    const pct = (t.count / maxCount) * 100;
+                    const barColor = i === 0 ? "#ef4444" : i === 1 ? "#f59e0b" : i === 2 ? "#3b82f6" : "#6366f1";
+                    const isExpanded = expandedTheme === t.theme;
+                    return (
+                      <React.Fragment key={t.theme}>
+                      <tr
+                        style={{ transition: "background 0.15s", cursor: "pointer", background: isExpanded ? "rgba(99,102,241,0.06)" : "transparent" }}
+                        onClick={() => setExpandedTheme(isExpanded ? null : t.theme)}
+                        onMouseOver={e => { if (!isExpanded) e.currentTarget.style.background = "rgba(255,255,255,0.02)"; }}
+                        onMouseOut={e => { if (!isExpanded) e.currentTarget.style.background = "transparent"; }}
+                      >
+                        <td style={{ ...styles.td, textAlign: "center", fontWeight: 700, fontSize: 14, color: i === 0 ? "#eab308" : i === 1 ? "#94a3b8" : i === 2 ? "#b4783c" : "#475569" }}>
+                          {i + 1}
+                        </td>
+                        <td style={{ ...styles.td, fontWeight: 500, color: "#e2e8f0" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontSize: 10, color: "#64748b", transition: "transform 0.2s", transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
+                            {t.theme}
+                          </div>
+                        </td>
+                        <td style={{ ...styles.td, textAlign: "center" }}>
+                          <span style={{
+                            display: "inline-block",
+                            background: `${barColor}22`,
+                            color: barColor,
+                            fontWeight: 700,
+                            fontSize: 14,
+                            padding: "4px 14px",
+                            borderRadius: 20,
+                            minWidth: 32,
+                          }}>
+                            {t.count}
+                          </span>
+                        </td>
+                        <td style={styles.td}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ flex: 1, background: "rgba(255,255,255,0.04)", borderRadius: 4, height: 8, overflow: "hidden" }}>
+                              <div style={{
+                                height: "100%",
+                                borderRadius: 4,
+                                background: `linear-gradient(90deg, ${barColor}, ${barColor}88)`,
+                                width: `${pct}%`,
+                                transition: "width 0.5s ease",
+                              }} />
+                            </div>
+                            <span style={{ fontSize: 11, color: "#64748b", minWidth: 32, textAlign: "right" }}>
+                              {((t.count / tabData.length) * 100).toFixed(0)}%
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                      {isExpanded && (
+                        <tr>
+                          <td colSpan={4} style={{ padding: 0, borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
+                            <div style={{
+                              background: "rgba(0,0,0,0.2)",
+                              padding: "12px 16px",
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 10,
+                            }}>
+                              {t.items.map(item => (
+                                <div
+                                  key={item.id}
+                                  style={{
+                                    background: "rgba(255,255,255,0.03)",
+                                    border: "1px solid rgba(255,255,255,0.06)",
+                                    borderRadius: 10,
+                                    padding: "14px 18px",
+                                    cursor: "pointer",
+                                    transition: "border-color 0.2s, background 0.2s",
+                                  }}
+                                  onClick={(e) => { e.stopPropagation(); setSelectedFeedback(item); }}
+                                  onMouseOver={e => { e.currentTarget.style.borderColor = "rgba(99,102,241,0.3)"; e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+                                  onMouseOut={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+                                >
+                                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                      <span style={{ fontSize: 11, color: "#64748b", fontFamily: "'JetBrains Mono', monospace" }}>{item.id}</span>
+                                      <span style={{ fontSize: 11, color: "#475569" }}>{item.date}</span>
+                                      <span style={{ fontSize: 11, color: CATEGORIES_META[item.category]?.color || "#64748b" }}>
+                                        {CATEGORIES_META[item.category]?.icon} {item.category}
+                                      </span>
+                                    </div>
+                                    <span style={styles.badge(PRIORITY_COLORS[item.priority].bg, PRIORITY_COLORS[item.priority].text)}>
+                                      <span style={styles.dotPulse(PRIORITY_COLORS[item.priority].dot)}></span>
+                                      {item.priority}
+                                    </span>
+                                  </div>
+                                  <div style={{ fontSize: 13, fontWeight: 500, color: "#e2e8f0", marginBottom: 4 }}>
+                                    {item.headline}
+                                  </div>
+                                  <div style={{ fontSize: 12, color: "#64748b", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                                    {item.fullText}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* Bottom Section: Pipeline Overview */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20, marginBottom: 24 }}>
