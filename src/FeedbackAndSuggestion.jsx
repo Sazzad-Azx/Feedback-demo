@@ -3,36 +3,36 @@ import DateRangePicker from "./DateRangePicker";
 
 // ─── Mock Data ───────────────────────────────────────────────────
 const MOCK_FEEDBACK = [
-  { id: "FB-001", chatId: "CNV-88234", date: "2026-03-26", headline: "Login issues after password reset on mobile app", fullText: "Customer reported that after resetting their password through the mobile app, they were unable to log back in for over 30 minutes. The session token wasn't refreshing properly. They suggested adding a 'force logout all devices' option during password reset.", category: "Account Related Issue", sentiment: "Negative", priority: "High", status: "Under Review", type: "feedback", common_topic: "Login fails after password reset" },
-  { id: "FB-002", chatId: "CNV-88190", date: "2026-03-26", headline: "Requested dark mode for the trading dashboard", fullText: "Customer mentioned eye strain during late-night trading sessions and suggested implementing a dark mode toggle for the main trading dashboard. They referenced competitor platforms that already offer this.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "New", type: "suggestion", common_topic: "Add dark mode to dashboard" },
-  { id: "FB-003", chatId: "CNV-88102", date: "2026-03-25", headline: "Payout processing time is too slow compared to competitors", fullText: "Customer expressed frustration that payouts take 3-5 business days while competitors offer 24-hour processing. Suggested partnering with faster payment processors or offering crypto payout options for instant withdrawal.", category: "Payout Related Issue", sentiment: "Negative", priority: "High", status: "Escalated", type: "feedback", common_topic: "Slow payout processing" },
-  { id: "FB-004", chatId: "CNV-87998", date: "2026-03-25", headline: "Appreciated the quick resolution of account verification", fullText: "Customer praised the support team for resolving their KYC verification issue within 10 minutes. They suggested this level of service should be highlighted in marketing materials.", category: "KYC_Issue", sentiment: "Positive", priority: "Low", status: "Acknowledged", type: "feedback", common_topic: "Praise for quick KYC resolution" },
-  { id: "FB-005", chatId: "CNV-87845", date: "2026-03-24", headline: "Coupon code not applying at checkout for scaling plan", fullText: "Multiple customers have reported that promotional coupon codes for the scaling plan are not being applied correctly at checkout. The discount shows briefly then disappears when the payment page loads.", category: "Offers & Coupons", sentiment: "Negative", priority: "High", status: "In Progress", type: "feedback", common_topic: null },
-  { id: "FB-006", chatId: "CNV-87790", date: "2026-03-24", headline: "Suggestion to add MT5 platform support", fullText: "Customer strongly suggested adding MetaTrader 5 support alongside MT4. They mentioned that many professional traders prefer MT5 for its advanced charting and multi-asset capabilities.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "Under Review", type: "suggestion", common_topic: "Add MetaTrader 5 support" },
-  { id: "FB-007", chatId: "CNV-87701", date: "2026-03-23", headline: "Scaling rules documentation is confusing and outdated", fullText: "Customer found the scaling rules documentation contradictory and hard to follow. Specific sections about profit targets and drawdown limits had conflicting information. Suggested a visual flowchart instead of text-heavy docs.", category: "Rules & Scaling", sentiment: "Negative", priority: "Medium", status: "In Progress", type: "feedback", common_topic: "Scaling rules unclear or contradictory" },
-  { id: "FB-008", chatId: "CNV-87650", date: "2026-03-23", headline: "Refund policy needs clearer communication upfront", fullText: "Customer was surprised by the refund policy terms after purchase. They suggested displaying refund conditions more prominently on the pricing page and during checkout, not just in fine print.", category: "Payment & Refunds", sentiment: "Negative", priority: "Medium", status: "New", type: "suggestion", common_topic: "Refund policy not visible before purchase" },
-  { id: "FB-009", chatId: "CNV-87588", date: "2026-03-22", headline: "Live chat wait times have improved significantly", fullText: "Returning customer noted that live chat response times have dropped from 15+ minutes to under 3 minutes over the past month. They appreciated the improvement and suggested maintaining this standard.", category: "Support", sentiment: "Positive", priority: "Low", status: "Acknowledged", type: "feedback", common_topic: "Improved live chat response times" },
-  { id: "FB-010", chatId: "CNV-87490", date: "2026-03-22", headline: "Account dashboard shows incorrect balance after trade close", fullText: "Customer reported a UI bug where their account balance didn't update immediately after closing a profitable trade. The correct balance only appeared after a manual page refresh. This caused anxiety about whether the trade was properly recorded.", category: "Account Related Issue", sentiment: "Negative", priority: "High", status: "Escalated", type: "feedback", common_topic: null },
-  { id: "FB-011", chatId: "CNV-87402", date: "2026-03-21", headline: "Need better notification system for margin calls", fullText: "Customer nearly missed a margin call because the only notification was an in-app popup they didn't see. Suggested adding email, SMS, and push notification options for critical account alerts.", category: "Platform & Trading", sentiment: "Negative", priority: "High", status: "Under Review", type: "suggestion", common_topic: "Better margin call notifications needed" },
-  { id: "FB-012", chatId: "CNV-87355", date: "2026-03-21", headline: "KYC re-verification process is unnecessarily repetitive", fullText: "Long-time customer was asked to re-verify KYC documents they had already submitted. The process required uploading the same documents again. Suggested implementing a document retention policy for verified users.", category: "KYC_Issue", sentiment: "Negative", priority: "Medium", status: "New", type: "feedback", common_topic: "Repetitive KYC re-verification" },
-  { id: "FB-013", chatId: "CNV-87290", date: "2026-03-20", headline: "Suggest adding a demo/paper trading mode for new users", fullText: "New customer suggested offering a paper trading or demo mode so users can familiarize themselves with the platform before committing real capital. This would reduce early churn and support tickets from confused newcomers.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "New", type: "suggestion", common_topic: "Add demo or paper trading mode" },
-  { id: "FB-014", chatId: "CNV-87200", date: "2026-03-20", headline: "Weekend support availability is needed for global traders", fullText: "Customer in a different timezone emphasized the need for weekend support since markets they trade are open on weekends. Suggested at least limited weekend chat hours or an AI chatbot for common issues.", category: "Support", sentiment: "Neutral", priority: "Medium", status: "Under Review", type: "suggestion", common_topic: "Weekend support for global traders" },
-  { id: "FB-015", chatId: "CNV-87120", date: "2026-03-19", headline: "Promotional email promised discount not honored at checkout", fullText: "Customer received a promotional email with a 20% discount code but the code was rejected at checkout. Support confirmed the promotion had ended the day before the email was sent. Customer suggested better coordination between marketing and system teams.", category: "Offers & Coupons", sentiment: "Negative", priority: "High", status: "Escalated", type: "feedback", common_topic: "Coupon codes not working at checkout" },
-  { id: "FB-016", chatId: "CNV-87050", date: "2026-03-19", headline: "Can't log in after changing my password on phone", fullText: "After updating my password using the mobile browser, I kept getting 'invalid credentials' for almost an hour. Had to clear cookies and try again. Very frustrating experience.", category: "Account Related Issue", sentiment: "Negative", priority: "High", status: "New", type: "feedback", common_topic: null },
-  { id: "FB-017", chatId: "CNV-86990", date: "2026-03-18", headline: "Password reset didn't work — stuck on login screen", fullText: "Reset my password via email link but the new password wasn't accepted on the login page. Tried multiple browsers. Eventually worked after 45 minutes. Please fix this.", category: "Account Related Issue", sentiment: "Negative", priority: "High", status: "Under Review", type: "feedback", common_topic: null },
-  { id: "FB-018", chatId: "CNV-86920", date: "2026-03-18", headline: "Payout took 5 days, competitors do it in 24 hours", fullText: "I've been waiting 5 business days for my payout. Other prop firms process withdrawals within a day. This is unacceptable for a platform of this size. Need faster payment rails.", category: "Payout Related Issue", sentiment: "Negative", priority: "High", status: "New", type: "feedback", common_topic: "Slow payout processing" },
-  { id: "FB-019", chatId: "CNV-86880", date: "2026-03-18", headline: "Withdrawal processing is way too slow", fullText: "My withdrawal request has been pending for 4 days now. This is really slow compared to what other platforms offer. Please consider adding instant payout options.", category: "Payout Related Issue", sentiment: "Negative", priority: "High", status: "Under Review", type: "feedback", common_topic: "Slow payout processing" },
-  { id: "FB-020", chatId: "CNV-86800", date: "2026-03-17", headline: "Discount code from newsletter didn't work at checkout", fullText: "Got a 15% off coupon in the weekly newsletter but it shows 'invalid code' when I try to apply it at checkout. This has happened twice now with different codes.", category: "Offers & Coupons", sentiment: "Negative", priority: "Medium", status: "New", type: "feedback", common_topic: null },
-  { id: "FB-021", chatId: "CNV-86750", date: "2026-03-17", headline: "Balance not updating after closing trades", fullText: "Closed three profitable trades but my balance still shows the old amount. Had to refresh the page manually each time. The dashboard should update in real-time.", category: "Account Related Issue", sentiment: "Negative", priority: "High", status: "In Progress", type: "feedback", common_topic: null },
-  { id: "FB-022", chatId: "CNV-86700", date: "2026-03-17", headline: "Please add MetaTrader 5 — MT4 feels outdated", fullText: "MT4 is great but MT5 has so many more features. Advanced charting, more timeframes, better backtesting. Most serious traders have moved to MT5. Please add support.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "New", type: "suggestion", common_topic: "Add MetaTrader 5 support" },
-  { id: "FB-023", chatId: "CNV-86650", date: "2026-03-16", headline: "Suggestion: Add a practice/demo account for beginners", fullText: "As a new trader, I'd love a demo mode to learn the platform without risking real money. It would help reduce confusion and support tickets from new users.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "Under Review", type: "suggestion", common_topic: "Add demo or paper trading mode" },
-  { id: "FB-024", chatId: "CNV-86600", date: "2026-03-16", headline: "Dark mode option would be great for night trading", fullText: "Trading late at night with the bright interface causes eye strain. A dark theme toggle on the dashboard would be really helpful. Many competitors already have this.", category: "Platform & Trading", sentiment: "Neutral", priority: "Low", status: "New", type: "suggestion", common_topic: "Add dark mode to dashboard" },
-  { id: "FB-025", chatId: "CNV-86550", date: "2026-03-16", headline: "Need SMS/email alerts for margin calls, not just popup", fullText: "I almost missed a margin call because it was only shown as an in-app notification. Please add SMS and email alerts for critical account events.", category: "Platform & Trading", sentiment: "Negative", priority: "High", status: "New", type: "suggestion", common_topic: "Better margin call notifications needed" },
-  { id: "FB-026", chatId: "CNV-86500", date: "2026-03-15", headline: "Refund terms should be shown before purchase, not after", fullText: "I only found out about the strict refund policy after paying. This information should be clearly visible on the pricing page, not buried in terms and conditions.", category: "Payment & Refunds", sentiment: "Negative", priority: "Medium", status: "New", type: "suggestion", common_topic: "Refund policy not visible before purchase" },
-  { id: "FB-027", chatId: "CNV-86450", date: "2026-03-15", headline: "Weekend live chat support needed for international traders", fullText: "Markets I trade are open on weekends but support is closed. At least a chatbot or limited weekend hours would help. Many of us trade from different timezones.", category: "Support", sentiment: "Neutral", priority: "Medium", status: "New", type: "suggestion", common_topic: "Weekend support for global traders" },
-  { id: "FB-028", chatId: "CNV-86400", date: "2026-03-15", headline: "Paper trading feature would help new users get started", fullText: "A simulated trading environment would be amazing for onboarding. Let new users try the platform risk-free before committing funds. This would also reduce early churn.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "New", type: "suggestion", common_topic: "Add demo or paper trading mode" },
-  { id: "FB-029", chatId: "CNV-86350", date: "2026-03-14", headline: "KYC documents requested again after already being verified", fullText: "I verified my identity 6 months ago and now I'm being asked to upload everything again. Why don't you retain verified documents? This is a waste of time.", category: "KYC_Issue", sentiment: "Negative", priority: "Medium", status: "New", type: "feedback", common_topic: "Repetitive KYC re-verification" },
-  { id: "FB-030", chatId: "CNV-86300", date: "2026-03-14", headline: "Scaling rules page has contradictory information", fullText: "The profit target section says 8% but later says 10%. The drawdown rules are also confusing. Please create a simple visual guide instead of walls of text.", category: "Rules & Scaling", sentiment: "Negative", priority: "Medium", status: "New", type: "feedback", common_topic: "Scaling rules unclear or contradictory" },
+  { id: "FB-001", chatId: "CNV-88234", date: "2026-03-26", headline: "Login issues after password reset on mobile app", fullText: "Customer reported that after resetting their password through the mobile app, they were unable to log back in for over 30 minutes. The session token wasn't refreshing properly. They suggested adding a 'force logout all devices' option during password reset.", category: "Account Related Issue", sentiment: "Negative", priority: "High", status: "Under Review", type: "feedback", product: "CFD", common_topic: "Login fails after password reset" },
+  { id: "FB-002", chatId: "CNV-88190", date: "2026-03-26", headline: "Requested dark mode for the trading dashboard", fullText: "Customer mentioned eye strain during late-night trading sessions and suggested implementing a dark mode toggle for the main trading dashboard. They referenced competitor platforms that already offer this.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "New", type: "suggestion", product: "CFD", common_topic: "Add dark mode to dashboard" },
+  { id: "FB-003", chatId: "CNV-88102", date: "2026-03-25", headline: "Payout processing time is too slow compared to competitors", fullText: "Customer expressed frustration that payouts take 3-5 business days while competitors offer 24-hour processing. Suggested partnering with faster payment processors or offering crypto payout options for instant withdrawal.", category: "Payout Related Issue", sentiment: "Negative", priority: "High", status: "Escalated", type: "feedback", product: "Futures", common_topic: "Slow payout processing" },
+  { id: "FB-004", chatId: "CNV-87998", date: "2026-03-25", headline: "Appreciated the quick resolution of account verification", fullText: "Customer praised the support team for resolving their KYC verification issue within 10 minutes. They suggested this level of service should be highlighted in marketing materials.", category: "KYC_Issue", sentiment: "Positive", priority: "Low", status: "Acknowledged", type: "feedback", product: "CFD", common_topic: "Praise for quick KYC resolution" },
+  { id: "FB-005", chatId: "CNV-87845", date: "2026-03-24", headline: "Coupon code not applying at checkout for scaling plan", fullText: "Multiple customers have reported that promotional coupon codes for the scaling plan are not being applied correctly at checkout. The discount shows briefly then disappears when the payment page loads.", category: "Offers & Coupons", sentiment: "Negative", priority: "High", status: "In Progress", type: "feedback", product: "CFD", common_topic: null },
+  { id: "FB-006", chatId: "CNV-87790", date: "2026-03-24", headline: "Suggestion to add MT5 platform support", fullText: "Customer strongly suggested adding MetaTrader 5 support alongside MT4. They mentioned that many professional traders prefer MT5 for its advanced charting and multi-asset capabilities.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "Under Review", type: "suggestion", product: "Futures", common_topic: "Add MetaTrader 5 support" },
+  { id: "FB-007", chatId: "CNV-87701", date: "2026-03-23", headline: "Scaling rules documentation is confusing and outdated", fullText: "Customer found the scaling rules documentation contradictory and hard to follow. Specific sections about profit targets and drawdown limits had conflicting information. Suggested a visual flowchart instead of text-heavy docs.", category: "Rules & Scaling", sentiment: "Negative", priority: "Medium", status: "In Progress", type: "feedback", product: "Futures", common_topic: "Scaling rules unclear or contradictory" },
+  { id: "FB-008", chatId: "CNV-87650", date: "2026-03-23", headline: "Refund policy needs clearer communication upfront", fullText: "Customer was surprised by the refund policy terms after purchase. They suggested displaying refund conditions more prominently on the pricing page and during checkout, not just in fine print.", category: "Payment & Refunds", sentiment: "Negative", priority: "Medium", status: "New", type: "suggestion", product: "CFD", common_topic: "Refund policy not visible before purchase" },
+  { id: "FB-009", chatId: "CNV-87588", date: "2026-03-22", headline: "Live chat wait times have improved significantly", fullText: "Returning customer noted that live chat response times have dropped from 15+ minutes to under 3 minutes over the past month. They appreciated the improvement and suggested maintaining this standard.", category: "Support", sentiment: "Positive", priority: "Low", status: "Acknowledged", type: "feedback", product: "CFD", common_topic: "Improved live chat response times" },
+  { id: "FB-010", chatId: "CNV-87490", date: "2026-03-22", headline: "Account dashboard shows incorrect balance after trade close", fullText: "Customer reported a UI bug where their account balance didn't update immediately after closing a profitable trade. The correct balance only appeared after a manual page refresh. This caused anxiety about whether the trade was properly recorded.", category: "Account Related Issue", sentiment: "Negative", priority: "High", status: "Escalated", type: "feedback", product: "Futures", common_topic: null },
+  { id: "FB-011", chatId: "CNV-87402", date: "2026-03-21", headline: "Need better notification system for margin calls", fullText: "Customer nearly missed a margin call because the only notification was an in-app popup they didn't see. Suggested adding email, SMS, and push notification options for critical account alerts.", category: "Platform & Trading", sentiment: "Negative", priority: "High", status: "Under Review", type: "suggestion", product: "Futures", common_topic: "Better margin call notifications needed" },
+  { id: "FB-012", chatId: "CNV-87355", date: "2026-03-21", headline: "KYC re-verification process is unnecessarily repetitive", fullText: "Long-time customer was asked to re-verify KYC documents they had already submitted. The process required uploading the same documents again. Suggested implementing a document retention policy for verified users.", category: "KYC_Issue", sentiment: "Negative", priority: "Medium", status: "New", type: "feedback", product: "CFD", common_topic: "Repetitive KYC re-verification" },
+  { id: "FB-013", chatId: "CNV-87290", date: "2026-03-20", headline: "Suggest adding a demo/paper trading mode for new users", fullText: "New customer suggested offering a paper trading or demo mode so users can familiarize themselves with the platform before committing real capital. This would reduce early churn and support tickets from confused newcomers.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "New", type: "suggestion", product: "CFD", common_topic: "Add demo or paper trading mode" },
+  { id: "FB-014", chatId: "CNV-87200", date: "2026-03-20", headline: "Weekend support availability is needed for global traders", fullText: "Customer in a different timezone emphasized the need for weekend support since markets they trade are open on weekends. Suggested at least limited weekend chat hours or an AI chatbot for common issues.", category: "Support", sentiment: "Neutral", priority: "Medium", status: "Under Review", type: "suggestion", product: "Futures", common_topic: "Weekend support for global traders" },
+  { id: "FB-015", chatId: "CNV-87120", date: "2026-03-19", headline: "Promotional email promised discount not honored at checkout", fullText: "Customer received a promotional email with a 20% discount code but the code was rejected at checkout. Support confirmed the promotion had ended the day before the email was sent. Customer suggested better coordination between marketing and system teams.", category: "Offers & Coupons", sentiment: "Negative", priority: "High", status: "Escalated", type: "feedback", product: "CFD", common_topic: "Coupon codes not working at checkout" },
+  { id: "FB-016", chatId: "CNV-87050", date: "2026-03-19", headline: "Can't log in after changing my password on phone", fullText: "After updating my password using the mobile browser, I kept getting 'invalid credentials' for almost an hour. Had to clear cookies and try again. Very frustrating experience.", category: "Account Related Issue", sentiment: "Negative", priority: "High", status: "New", type: "feedback", product: "Futures", common_topic: null },
+  { id: "FB-017", chatId: "CNV-86990", date: "2026-03-18", headline: "Password reset didn't work — stuck on login screen", fullText: "Reset my password via email link but the new password wasn't accepted on the login page. Tried multiple browsers. Eventually worked after 45 minutes. Please fix this.", category: "Account Related Issue", sentiment: "Negative", priority: "High", status: "Under Review", type: "feedback", product: "CFD", common_topic: null },
+  { id: "FB-018", chatId: "CNV-86920", date: "2026-03-18", headline: "Payout took 5 days, competitors do it in 24 hours", fullText: "I've been waiting 5 business days for my payout. Other prop firms process withdrawals within a day. This is unacceptable for a platform of this size. Need faster payment rails.", category: "Payout Related Issue", sentiment: "Negative", priority: "High", status: "New", type: "feedback", product: "Futures", common_topic: "Slow payout processing" },
+  { id: "FB-019", chatId: "CNV-86880", date: "2026-03-18", headline: "Withdrawal processing is way too slow", fullText: "My withdrawal request has been pending for 4 days now. This is really slow compared to what other platforms offer. Please consider adding instant payout options.", category: "Payout Related Issue", sentiment: "Negative", priority: "High", status: "Under Review", type: "feedback", product: "CFD", common_topic: "Slow payout processing" },
+  { id: "FB-020", chatId: "CNV-86800", date: "2026-03-17", headline: "Discount code from newsletter didn't work at checkout", fullText: "Got a 15% off coupon in the weekly newsletter but it shows 'invalid code' when I try to apply it at checkout. This has happened twice now with different codes.", category: "Offers & Coupons", sentiment: "Negative", priority: "Medium", status: "New", type: "feedback", product: "Futures", common_topic: null },
+  { id: "FB-021", chatId: "CNV-86750", date: "2026-03-17", headline: "Balance not updating after closing trades", fullText: "Closed three profitable trades but my balance still shows the old amount. Had to refresh the page manually each time. The dashboard should update in real-time.", category: "Account Related Issue", sentiment: "Negative", priority: "High", status: "In Progress", type: "feedback", product: "CFD", common_topic: null },
+  { id: "FB-022", chatId: "CNV-86700", date: "2026-03-17", headline: "Please add MetaTrader 5 — MT4 feels outdated", fullText: "MT4 is great but MT5 has so many more features. Advanced charting, more timeframes, better backtesting. Most serious traders have moved to MT5. Please add support.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "New", type: "suggestion", product: "Futures", common_topic: "Add MetaTrader 5 support" },
+  { id: "FB-023", chatId: "CNV-86650", date: "2026-03-16", headline: "Suggestion: Add a practice/demo account for beginners", fullText: "As a new trader, I'd love a demo mode to learn the platform without risking real money. It would help reduce confusion and support tickets from new users.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "Under Review", type: "suggestion", product: "CFD", common_topic: "Add demo or paper trading mode" },
+  { id: "FB-024", chatId: "CNV-86600", date: "2026-03-16", headline: "Dark mode option would be great for night trading", fullText: "Trading late at night with the bright interface causes eye strain. A dark theme toggle on the dashboard would be really helpful. Many competitors already have this.", category: "Platform & Trading", sentiment: "Neutral", priority: "Low", status: "New", type: "suggestion", product: "Futures", common_topic: "Add dark mode to dashboard" },
+  { id: "FB-025", chatId: "CNV-86550", date: "2026-03-16", headline: "Need SMS/email alerts for margin calls, not just popup", fullText: "I almost missed a margin call because it was only shown as an in-app notification. Please add SMS and email alerts for critical account events.", category: "Platform & Trading", sentiment: "Negative", priority: "High", status: "New", type: "suggestion", product: "CFD", common_topic: "Better margin call notifications needed" },
+  { id: "FB-026", chatId: "CNV-86500", date: "2026-03-15", headline: "Refund terms should be shown before purchase, not after", fullText: "I only found out about the strict refund policy after paying. This information should be clearly visible on the pricing page, not buried in terms and conditions.", category: "Payment & Refunds", sentiment: "Negative", priority: "Medium", status: "New", type: "suggestion", product: "Futures", common_topic: "Refund policy not visible before purchase" },
+  { id: "FB-027", chatId: "CNV-86450", date: "2026-03-15", headline: "Weekend live chat support needed for international traders", fullText: "Markets I trade are open on weekends but support is closed. At least a chatbot or limited weekend hours would help. Many of us trade from different timezones.", category: "Support", sentiment: "Neutral", priority: "Medium", status: "New", type: "suggestion", product: "CFD", common_topic: "Weekend support for global traders" },
+  { id: "FB-028", chatId: "CNV-86400", date: "2026-03-15", headline: "Paper trading feature would help new users get started", fullText: "A simulated trading environment would be amazing for onboarding. Let new users try the platform risk-free before committing funds. This would also reduce early churn.", category: "Platform & Trading", sentiment: "Neutral", priority: "Medium", status: "New", type: "suggestion", product: "Futures", common_topic: "Add demo or paper trading mode" },
+  { id: "FB-029", chatId: "CNV-86350", date: "2026-03-14", headline: "KYC documents requested again after already being verified", fullText: "I verified my identity 6 months ago and now I'm being asked to upload everything again. Why don't you retain verified documents? This is a waste of time.", category: "KYC_Issue", sentiment: "Negative", priority: "Medium", status: "New", type: "feedback", product: "CFD", common_topic: "Repetitive KYC re-verification" },
+  { id: "FB-030", chatId: "CNV-86300", date: "2026-03-14", headline: "Scaling rules page has contradictory information", fullText: "The profit target section says 8% but later says 10%. The drawdown rules are also confusing. Please create a simple visual guide instead of walls of text.", category: "Rules & Scaling", sentiment: "Negative", priority: "Medium", status: "New", type: "feedback", product: "Futures", common_topic: "Scaling rules unclear or contradictory" },
 ];
 
 const CATEGORIES_META = {
@@ -374,11 +374,12 @@ const styles = {
 
 // ─── Component ───────────────────────────────────────────────────
 export default function FeedbackAndSuggestion() {
-  const [feedbackData] = useState(MOCK_FEEDBACK);
+  const [feedbackData, setFeedbackData] = useState(MOCK_FEEDBACK);
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [viewingChat, setViewingChat] = useState(null);
   const [filterCategory, setFilterCategory] = useState("All");
   const [filterPriority, setFilterPriority] = useState("All");
+  const [filterProduct, setFilterProduct] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("date");
@@ -399,6 +400,7 @@ export default function FeedbackAndSuggestion() {
     let d = allData.filter(f => f.type === activeTab);
     if (filterCategory !== "All") d = d.filter(f => f.category === filterCategory);
     if (filterPriority !== "All") d = d.filter(f => f.priority === filterPriority);
+    if (filterProduct !== "All") d = d.filter(f => f.product === filterProduct);
     if (searchQuery.trim()) d = d.filter(f => f.headline.toLowerCase().includes(searchQuery.toLowerCase()));
     if (dateFrom) d = d.filter(f => f.date >= dateFrom);
     if (dateTo) d = d.filter(f => f.date <= dateTo);
@@ -411,7 +413,7 @@ export default function FeedbackAndSuggestion() {
       return 0;
     });
     return d;
-  }, [allData, activeTab, filterCategory, filterPriority, searchQuery, dateFrom, dateTo, sortBy, sortDir]);
+  }, [allData, activeTab, filterCategory, filterPriority, filterProduct, searchQuery, dateFrom, dateTo, sortBy, sortDir]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
@@ -513,7 +515,7 @@ export default function FeedbackAndSuggestion() {
           ].map(tab => (
             <button
               key={tab.key}
-              onClick={() => { setActiveTab(tab.key); setCurrentPage(1); setFilterCategory("All"); setExpandedTheme(null); }}
+              onClick={() => { setActiveTab(tab.key); setCurrentPage(1); setFilterCategory("All"); setFilterProduct("All"); setExpandedTheme(null); }}
               style={{
                 padding: "8px 24px",
                 fontSize: 13,
@@ -563,6 +565,11 @@ export default function FeedbackAndSuggestion() {
             <option value="Medium">Medium</option>
             <option value="Low">Low</option>
           </select>
+          <select style={styles.filterSelect} value={filterProduct} onChange={e => { setFilterProduct(e.target.value); setCurrentPage(1); }}>
+            <option value="All">All Products</option>
+            <option value="CFD">CFD</option>
+            <option value="Futures">Futures</option>
+          </select>
           {/* Spacer to push date filter right */}
           <div style={{ flex: "1 1 0", minWidth: 0 }} />
 
@@ -574,100 +581,124 @@ export default function FeedbackAndSuggestion() {
           />
         </div>
 
-        {/* Metrics Row */}
-        <div style={styles.metricsRow}>
-          <div style={styles.metricCard}>
-            <div style={styles.metricLabel}>Total Feedback</div>
-            <div style={styles.metricValue}>{metrics.total}</div>
-            <div style={styles.metricSub}>AI-detected + manual entries</div>
-          </div>
-          <div style={styles.metricCard}>
-            <div style={styles.metricLabel}>High Priority</div>
-            <div style={{ ...styles.metricValue, color: "#ef4444" }}>{metrics.highPriority}</div>
-            <div style={styles.metricSub}>{((metrics.highPriority / metrics.total) * 100).toFixed(0)}% of total feedback</div>
-          </div>
-        </div>
-
-        {/* Main Grid: Feedback Table + Category Ranking */}
-        <div style={styles.sectionGrid}>
-          {/* Feedback Table */}
+        {/* Total Feedback (left) + Top Feedback Areas (right) */}
+        <div style={{ display: "grid", gridTemplateColumns: "480px 1fr", gap: 20, marginBottom: 24, alignItems: "stretch" }}>
+          {/* Total Feedback with Pie Chart */}
           <div style={styles.card}>
             <div style={styles.cardHeader}>
               <div style={styles.cardTitle}>
                 <span style={styles.cardTitleIcon}>📋</span>
-                {activeTab === "feedback" ? "Feedback" : "Suggestions"}
-                <span style={{ fontSize: 12, color: "#475569", fontWeight: 400, marginLeft: 8 }}>{filtered.length} results</span>
+                Total Feedback
               </div>
             </div>
-            <div style={{ overflowX: "auto" }}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={{ ...styles.th, cursor: "pointer" }} onClick={() => handleSort("date")}>Date <SortArrow field="date" /></th>
-                    <th style={styles.th}>Feedback Headline</th>
-                    <th style={styles.th}>Chat ID</th>
-                    <th style={styles.th}>Category</th>
-                    <th style={{ ...styles.th, cursor: "pointer" }} onClick={() => handleSort("priority")}>Priority <SortArrow field="priority" /></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginated.length === 0 ? (
-                    <tr><td colSpan={5} style={styles.emptyState}>No feedback found matching your filters.</td></tr>
-                  ) : paginated.map((fb, i) => (
-                    <tr
-                      key={fb.id}
-                      style={{ ...styles.trHover, background: hoveredRow === i ? "rgba(255,255,255,0.02)" : "transparent" }}
-                      onMouseEnter={() => setHoveredRow(i)}
-                      onMouseLeave={() => setHoveredRow(null)}
-                    >
-                      <td style={{ ...styles.td, whiteSpace: "nowrap", fontSize: 12, color: "#64748b" }}>{fb.date}</td>
-                      <td style={styles.td}>
-                        <span style={styles.headline} onClick={() => setSelectedFeedback(fb)} onMouseOver={e => e.target.style.color = "#22c55e"} onMouseOut={e => e.target.style.color = "#e2e8f0"}>
-                          {fb.headline}
-                        </span>
-                      </td>
-                      <td style={styles.td}>
-                        {fb.chatId === "MANUAL" ? (
-                          <span style={{ ...styles.badge("rgba(148,163,184,0.12)", "#64748b") }}>Manual</span>
-                        ) : (
-                          <span style={styles.chatLink} onClick={() => setViewingChat(fb)} onMouseOver={e => e.target.style.color = "#7dd3fc"} onMouseOut={e => e.target.style.color = "#38bdf8"}>
-                            {fb.chatId}
-                          </span>
-                        )}
-                      </td>
-                      <td style={styles.td}>
-                        <span style={{ fontSize: 12, color: CATEGORIES_META[fb.category]?.color || "#64748b" }}>
-                          {CATEGORIES_META[fb.category]?.icon} {fb.category}
-                        </span>
-                      </td>
-                      <td style={styles.td}>
-                        <span style={styles.badge(PRIORITY_COLORS[fb.priority].bg, PRIORITY_COLORS[fb.priority].text)}>
-                          <span style={styles.dotPulse(PRIORITY_COLORS[fb.priority].dot)}></span>
-                          {fb.priority}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {totalPages > 1 && (
-              <div style={styles.pagination}>
-                <span style={{ fontSize: 12, color: "#475569" }}>
-                  Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} of {filtered.length}
-                </span>
-                <div style={{ display: "flex", gap: 6 }}>
-                  <button style={styles.pageBtn(false)} onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>← Prev</button>
-                  {Array.from({ length: totalPages }, (_, i) => (
-                    <button key={i} style={styles.pageBtn(currentPage === i + 1)} onClick={() => setCurrentPage(i + 1)}>{i + 1}</button>
-                  ))}
-                  <button style={styles.pageBtn(false)} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next →</button>
-                </div>
-              </div>
-            )}
-          </div>
+            <div style={{ padding: "24px 18px", display: "flex", alignItems: "center", justifyContent: "center", gap: 28, flex: 1 }}>
+              {(() => {
+                const segments = [
+                  { label: "High", count: allData.filter(f => f.priority === "High").length, color: "#ef4444", glow: "rgba(239,68,68,0.3)" },
+                  { label: "Medium", count: allData.filter(f => f.priority === "Medium").length, color: "#eab308", glow: "rgba(234,179,8,0.3)" },
+                  { label: "Low", count: allData.filter(f => f.priority === "Low").length, color: "#22c55e", glow: "rgba(34,197,94,0.3)" },
+                ];
+                const total = segments.reduce((s, p) => s + p.count, 0) || 1;
+                const size = 160;
+                const cx = size / 2;
+                const cy = size / 2;
+                const outerR = 68;
+                const innerR = 44;
+                const toRad = (deg) => (deg * Math.PI) / 180;
+                let cumAngle = -90;
 
-          {/* Category Ranking */}
+                const slices = segments.map(s => {
+                  const angle = (s.count / total) * 360;
+                  const start = cumAngle;
+                  cumAngle += angle;
+                  const midAngle = start + angle / 2;
+                  return { ...s, startAngle: start, angle, midAngle };
+                });
+
+                const arcPath = (startAngle, angle, r, ir) => {
+                  if (angle >= 359.99) {
+                    return `M ${cx} ${cy - r} A ${r} ${r} 0 1 1 ${cx - 0.001} ${cy - r} L ${cx - 0.001} ${cy - ir} A ${ir} ${ir} 0 1 0 ${cx} ${cy - ir} Z`;
+                  }
+                  const end = startAngle + angle;
+                  const large = angle > 180 ? 1 : 0;
+                  const x1 = cx + r * Math.cos(toRad(startAngle));
+                  const y1 = cy + r * Math.sin(toRad(startAngle));
+                  const x2 = cx + r * Math.cos(toRad(end));
+                  const y2 = cy + r * Math.sin(toRad(end));
+                  const ix1 = cx + ir * Math.cos(toRad(end));
+                  const iy1 = cy + ir * Math.sin(toRad(end));
+                  const ix2 = cx + ir * Math.cos(toRad(startAngle));
+                  const iy2 = cy + ir * Math.sin(toRad(startAngle));
+                  return `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} L ${ix1} ${iy1} A ${ir} ${ir} 0 ${large} 0 ${ix2} ${iy2} Z`;
+                };
+
+                return (
+                  <>
+                    {/* Pie Chart */}
+                    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+                      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ filter: "drop-shadow(0 0 12px rgba(0,0,0,0.4))" }}>
+                        <defs>
+                          {slices.map((s, i) => (
+                            <linearGradient key={i} id={`grad-${i}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stopColor={s.color} stopOpacity="1" />
+                              <stop offset="100%" stopColor={s.color} stopOpacity="0.65" />
+                            </linearGradient>
+                          ))}
+                        </defs>
+                        {/* Background ring */}
+                        <circle cx={cx} cy={cy} r={outerR} fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth={outerR - innerR} />
+                        {/* Slices */}
+                        {slices.map((s, i) => s.count > 0 && (
+                          <path
+                            key={i}
+                            d={arcPath(s.startAngle, s.angle, outerR, innerR)}
+                            fill={`url(#grad-${i})`}
+                            stroke="#0b0f14"
+                            strokeWidth={2.5}
+                            style={{ filter: `drop-shadow(0 0 6px ${s.glow})` }}
+                          />
+                        ))}
+                        {/* Center circle */}
+                        <circle cx={cx} cy={cy} r={innerR - 4} fill="#0b0f14" />
+                        <circle cx={cx} cy={cy} r={innerR - 4} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth={1} />
+                        {/* Center text */}
+                        <text x={cx} y={cy - 6} textAnchor="middle" fill="#f1f5f9" fontSize={24} fontWeight={700} fontFamily="'DM Sans', sans-serif">{total}</text>
+                        <text x={cx} y={cy + 10} textAnchor="middle" fill="#64748b" fontSize={10} fontWeight={500} fontFamily="'DM Sans', sans-serif">Total</text>
+                      </svg>
+                    </div>
+
+                    {/* Legend */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                      {slices.map((s, i) => {
+                        const pct = ((s.count / total) * 100).toFixed(0);
+                        return (
+                          <div key={i} style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                            <div style={{
+                              width: 14, height: 14, borderRadius: "50%",
+                              background: `linear-gradient(135deg, ${s.color}, ${s.color}99)`,
+                              boxShadow: `0 0 8px ${s.glow}`,
+                              flexShrink: 0,
+                            }} />
+                            <div>
+                              <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                                <span style={{ fontSize: 20, fontWeight: 700, color: s.color }}>{s.count}</span>
+                                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 400 }}>{pct}%</span>
+                              </div>
+                              <div style={{ fontSize: 12, color: "#94a3b8", fontWeight: 500 }}>{s.label} Priority</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 12, marginTop: 2 }}>
+                        <div style={{ fontSize: 11, color: "#475569" }}>AI-detected + manual entries</div>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+          {/* Top Feedback Areas */}
           <div style={{ ...styles.card, display: "flex", flexDirection: "column", maxHeight: 600 }}>
             <div style={styles.cardHeader}>
               <div style={styles.cardTitle}>
@@ -676,7 +707,6 @@ export default function FeedbackAndSuggestion() {
                 <span style={{ fontSize: 11, color: "#475569", fontWeight: 400, marginLeft: 4 }}>{categoryRanking.length}</span>
               </div>
             </div>
-            {/* Search within categories */}
             <div style={{ padding: "10px 16px 6px" }}>
               <input
                 type="text"
@@ -698,7 +728,6 @@ export default function FeedbackAndSuggestion() {
                 onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.06)"}
               />
             </div>
-            {/* Scrollable list */}
             <div style={{ flex: 1, overflowY: "auto", padding: "4px 0" }}>
               {categoryRanking
                 .filter(item => item.category.toLowerCase().includes(categorySearch.toLowerCase()))
@@ -757,6 +786,169 @@ export default function FeedbackAndSuggestion() {
                 ) : "Click a category to filter the feedback table"}
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Feedback / Suggestions Table */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={styles.card}>
+            <div style={styles.cardHeader}>
+              <div style={styles.cardTitle}>
+                <span style={styles.cardTitleIcon}>📋</span>
+                {activeTab === "feedback" ? "Feedback" : "Suggestions"}
+                <span style={{ fontSize: 12, color: "#475569", fontWeight: 400, marginLeft: 8 }}>{filtered.length} results</span>
+              </div>
+              <button
+                onClick={() => {
+                  const headers = ["ID", "Date", "Chat ID", "Headline", "Full Text", "Category", "Product", "Sentiment", "Priority", "Status", "Type", "Common Topic"];
+                  const escapeCSV = (val) => {
+                    const s = String(val ?? "");
+                    return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
+                  };
+                  const rows = filtered.map(fb => [fb.id, fb.date, fb.chatId, fb.headline, fb.fullText, fb.category, fb.product, fb.sentiment, fb.priority, fb.status, fb.type, fb.common_topic || ""].map(escapeCSV).join(","));
+                  const csv = [headers.join(","), ...rows].join("\n");
+                  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `${activeTab}-data.csv`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 8,
+                  color: "#94a3b8",
+                  padding: "6px 14px",
+                  fontSize: 12,
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  transition: "background 0.15s, color 0.15s",
+                }}
+                onMouseOver={e => { e.currentTarget.style.background = "rgba(34,197,94,0.15)"; e.currentTarget.style.color = "#22c55e"; }}
+                onMouseOut={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "#94a3b8"; }}
+              >
+                <span style={{ fontSize: 14 }}>⬇</span> Download CSV
+              </button>
+            </div>
+            <div style={{ overflowX: "auto" }}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={{ ...styles.th, cursor: "pointer" }} onClick={() => handleSort("date")}>Date <SortArrow field="date" /></th>
+                    <th style={styles.th}>Feedback Headline</th>
+                    <th style={styles.th}>Chat ID</th>
+                    <th style={styles.th}>Category</th>
+                    <th style={styles.th}>Product</th>
+                    <th style={{ ...styles.th, cursor: "pointer" }} onClick={() => handleSort("priority")}>Priority <SortArrow field="priority" /></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginated.length === 0 ? (
+                    <tr><td colSpan={6} style={styles.emptyState}>No feedback found matching your filters.</td></tr>
+                  ) : paginated.map((fb, i) => (
+                    <tr
+                      key={fb.id}
+                      style={{ ...styles.trHover, background: hoveredRow === i ? "rgba(255,255,255,0.02)" : "transparent" }}
+                      onMouseEnter={() => setHoveredRow(i)}
+                      onMouseLeave={() => setHoveredRow(null)}
+                    >
+                      <td style={{ ...styles.td, whiteSpace: "nowrap", fontSize: 12, color: "#64748b" }}>{fb.date}</td>
+                      <td style={styles.td}>
+                        <span style={styles.headline} onClick={() => setSelectedFeedback(fb)} onMouseOver={e => e.target.style.color = "#22c55e"} onMouseOut={e => e.target.style.color = "#e2e8f0"}>
+                          {fb.headline}
+                        </span>
+                      </td>
+                      <td style={styles.td}>
+                        {fb.chatId === "MANUAL" ? (
+                          <span style={{ ...styles.badge("rgba(148,163,184,0.12)", "#64748b") }}>Manual</span>
+                        ) : (
+                          <span style={styles.chatLink} onClick={() => setViewingChat(fb)} onMouseOver={e => e.target.style.color = "#7dd3fc"} onMouseOut={e => e.target.style.color = "#38bdf8"}>
+                            {fb.chatId}
+                          </span>
+                        )}
+                      </td>
+                      <td style={styles.td}>
+                        <span style={{ fontSize: 12, color: CATEGORIES_META[fb.category]?.color || "#64748b" }}>
+                          {CATEGORIES_META[fb.category]?.icon} {fb.category}
+                        </span>
+                      </td>
+                      <td style={styles.td}>
+                        <span style={{
+                          display: "inline-block",
+                          padding: "3px 10px",
+                          borderRadius: 20,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          background: fb.product === "CFD" ? "rgba(56,189,248,0.15)" : "rgba(168,85,247,0.15)",
+                          color: fb.product === "CFD" ? "#38bdf8" : "#a855f7",
+                          whiteSpace: "nowrap",
+                        }}>
+                          {fb.product}
+                        </span>
+                      </td>
+                      <td style={styles.td}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <select
+                            value={fb.priority}
+                            onClick={e => e.stopPropagation()}
+                            onChange={e => {
+                              const newPriority = e.target.value;
+                              setFeedbackData(prev => prev.map(item =>
+                                item.id === fb.id ? { ...item, priority: newPriority, manualPriority: true } : item
+                              ));
+                            }}
+                            style={{
+                              background: PRIORITY_COLORS[fb.priority].bg,
+                              color: PRIORITY_COLORS[fb.priority].text,
+                              border: `1px solid ${PRIORITY_COLORS[fb.priority].text}33`,
+                              borderRadius: 20,
+                              padding: "3px 10px",
+                              fontSize: 11,
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              outline: "none",
+                              appearance: "none",
+                              WebkitAppearance: "none",
+                              MozAppearance: "none",
+                              paddingRight: 20,
+                              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748b' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`,
+                              backgroundRepeat: "no-repeat",
+                              backgroundPosition: "right 6px center",
+                            }}
+                          >
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                          </select>
+                          {fb.manualPriority && (
+                            <span title="Manually set — AI will not override" style={{ fontSize: 10, color: "#64748b", fontStyle: "italic", whiteSpace: "nowrap" }}>✋ Manual</span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {totalPages > 1 && (
+              <div style={styles.pagination}>
+                <span style={{ fontSize: 12, color: "#475569" }}>
+                  Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} of {filtered.length}
+                </span>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button style={styles.pageBtn(false)} onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>← Prev</button>
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <button key={i} style={styles.pageBtn(currentPage === i + 1)} onClick={() => setCurrentPage(i + 1)}>{i + 1}</button>
+                  ))}
+                  <button style={styles.pageBtn(false)} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next →</button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -895,42 +1087,6 @@ export default function FeedbackAndSuggestion() {
           </div>
         )}
 
-        {/* Bottom Section: Pipeline Overview */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20, marginBottom: 24 }}>
-          {/* Pipeline Overview */}
-          <div style={styles.card}>
-            <div style={styles.cardHeader}>
-              <div style={styles.cardTitle}>
-                <span style={styles.cardTitleIcon}>📊</span>
-                Feedback Pipeline Overview
-              </div>
-            </div>
-            <div style={{ padding: "20px 22px" }}>
-              {/* Priority Breakdown */}
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#94a3b8", marginBottom: 14 }}>Priority Distribution</div>
-                <div style={{ display: "flex", gap: 12 }}>
-                  {["High", "Medium", "Low"].map(p => {
-                    const count = allData.filter(f => f.priority === p).length;
-                    return (
-                      <div key={p} style={{
-                        flex: 1,
-                        background: PRIORITY_COLORS[p].bg,
-                        border: `1px solid ${PRIORITY_COLORS[p].text}22`,
-                        borderRadius: 10,
-                        padding: "14px 12px",
-                        textAlign: "center",
-                      }}>
-                        <div style={{ fontSize: 22, fontWeight: 700, color: PRIORITY_COLORS[p].text }}>{count}</div>
-                        <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{p}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Modal: Feedback Detail */}
@@ -940,10 +1096,42 @@ export default function FeedbackAndSuggestion() {
           <div style={styles.modalContent}>
             <button style={styles.closeBtn} onClick={() => setSelectedFeedback(null)}>✕</button>
             <div style={{ marginBottom: 20 }}>
-              <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
-                <span style={styles.badge(PRIORITY_COLORS[selectedFeedback.priority].bg, PRIORITY_COLORS[selectedFeedback.priority].text)}>
-                  {selectedFeedback.priority} Priority
-                </span>
+              <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap", alignItems: "center" }}>
+                <select
+                  value={selectedFeedback.priority}
+                  onChange={e => {
+                    const newPriority = e.target.value;
+                    setFeedbackData(prev => prev.map(item =>
+                      item.id === selectedFeedback.id ? { ...item, priority: newPriority, manualPriority: true } : item
+                    ));
+                    setSelectedFeedback(prev => ({ ...prev, priority: newPriority, manualPriority: true }));
+                  }}
+                  style={{
+                    background: PRIORITY_COLORS[selectedFeedback.priority].bg,
+                    color: PRIORITY_COLORS[selectedFeedback.priority].text,
+                    border: `1px solid ${PRIORITY_COLORS[selectedFeedback.priority].text}33`,
+                    borderRadius: 20,
+                    padding: "3px 10px",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    outline: "none",
+                    appearance: "none",
+                    WebkitAppearance: "none",
+                    MozAppearance: "none",
+                    paddingRight: 20,
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748b' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`,
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "right 6px center",
+                  }}
+                >
+                  <option value="High">High Priority</option>
+                  <option value="Medium">Medium Priority</option>
+                  <option value="Low">Low Priority</option>
+                </select>
+                {selectedFeedback.manualPriority && (
+                  <span style={{ fontSize: 10, color: "#64748b", fontStyle: "italic" }}>✋ Manually set</span>
+                )}
               </div>
               <h2 style={{ fontSize: 18, fontWeight: 600, color: "#f1f5f9", margin: "0 0 6px", lineHeight: 1.4 }}>{selectedFeedback.headline}</h2>
               <div style={{ display: "flex", gap: 16, fontSize: 12, color: "#64748b" }}>
