@@ -1,5 +1,142 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import DateRangePicker from "./DateRangePicker";
+
+// ─── Custom Dropdown Component ───────────────────────────────────
+function PillDropdown({ icon, label, value, options, onChange, searchable = true }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const rootRef = useRef(null);
+  const searchInputRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => { if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  useEffect(() => {
+    if (open && searchable && searchInputRef.current) searchInputRef.current.focus();
+    if (!open) setSearch("");
+  }, [open, searchable]);
+
+  const selected = options.find(o => o.value === value);
+  const displayText = selected ? selected.label : label;
+  const filtered = searchable
+    ? options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()))
+    : options;
+
+  return (
+    <div ref={rootRef} style={{ position: "relative" }}>
+      <div
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 10,
+          background: "rgba(10,15,25,0.85)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          borderRadius: 30,
+          height: 44,
+          padding: "4px 6px 4px 16px",
+          minWidth: 170,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+          cursor: "pointer",
+          userSelect: "none",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: 15, flexShrink: 0 }}>
+          {icon}
+        </div>
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flex: 1,
+          height: "100%",
+          background: "rgba(30,41,59,0.75)",
+          border: "1px solid rgba(255,255,255,0.05)",
+          borderRadius: 24,
+          padding: "0 14px",
+          gap: 10,
+        }}>
+          <span style={{ fontSize: 13, fontWeight: 500, color: "#cbd5e1", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {displayText}
+          </span>
+          <svg width="8" height="8" viewBox="0 0 10 10" style={{ transition: "transform 0.2s", transform: open ? "rotate(180deg)" : "rotate(0deg)", flexShrink: 0 }}>
+            <path fill="#94a3b8" d="M1 3.5l4 4 4-4z" />
+          </svg>
+        </div>
+      </div>
+
+      {open && (
+        <div style={{
+          position: "absolute",
+          top: "calc(100% + 6px)",
+          left: 0,
+          minWidth: "100%",
+          maxWidth: 320,
+          background: "rgba(15,20,32,0.98)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 12,
+          boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+          zIndex: 100,
+          overflow: "hidden",
+          padding: 6,
+        }}>
+          {searchable && (
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Search..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{
+                width: "100%",
+                background: "rgba(30,41,59,0.6)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 8,
+                color: "#cbd5e1",
+                padding: "8px 12px",
+                fontSize: 12,
+                outline: "none",
+                marginBottom: 6,
+                boxSizing: "border-box",
+              }}
+            />
+          )}
+          <div style={{ maxHeight: 260, overflowY: "auto" }}>
+            {filtered.length === 0 ? (
+              <div style={{ padding: "10px 12px", fontSize: 12, color: "#475569", textAlign: "center" }}>No matches</div>
+            ) : filtered.map(o => {
+              const isSelected = o.value === value;
+              return (
+                <div
+                  key={o.value}
+                  onClick={() => { onChange(o.value); setOpen(false); }}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: 6,
+                    cursor: "pointer",
+                    fontSize: 13,
+                    fontWeight: isSelected ? 600 : 500,
+                    color: isSelected ? "#38bdf8" : "#cbd5e1",
+                    background: isSelected ? "rgba(56,189,248,0.08)" : "transparent",
+                    transition: "background 0.12s",
+                  }}
+                  onMouseOver={e => { if (!isSelected) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+                  onMouseOut={e => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
+                >
+                  {o.label}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── Mock Data ───────────────────────────────────────────────────
 const MOCK_FEEDBACK = [
@@ -47,9 +184,9 @@ const CATEGORIES_META = {
 };
 
 const PRIORITY_COLORS = {
-  "High": { bg: "rgba(239,68,68,0.15)", text: "#ef4444", dot: "#ef4444" },
-  "Medium": { bg: "rgba(234,179,8,0.15)", text: "#eab308", dot: "#eab308" },
-  "Low": { bg: "rgba(34,197,94,0.15)", text: "#22c55e", dot: "#22c55e" },
+  "High": { bg: "rgba(255,46,151,0.15)", text: "#FF2E97", dot: "#FF2E97" },
+  "Medium": { bg: "rgba(168,85,247,0.15)", text: "#A855F7", dot: "#A855F7" },
+  "Low": { bg: "rgba(0,240,255,0.15)", text: "#00F0FF", dot: "#00F0FF" },
 };
 
 // ─── Styles ──────────────────────────────────────────────────────
@@ -115,6 +252,53 @@ const styles = {
     outline: "none",
     cursor: "pointer",
     minWidth: 140,
+  },
+  pillDropdown: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 10,
+    background: "rgba(10,15,25,0.85)",
+    border: "1px solid rgba(255,255,255,0.06)",
+    borderRadius: 30,
+    height: 44,
+    padding: "4px 6px 4px 16px",
+    minWidth: 170,
+    boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+  },
+  pillIconBox: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#94a3b8",
+    fontSize: 15,
+    flexShrink: 0,
+  },
+  pillInner: {
+    display: "flex",
+    alignItems: "center",
+    flex: 1,
+    height: "100%",
+    background: "rgba(30,41,59,0.75)",
+    border: "1px solid rgba(255,255,255,0.05)",
+    borderRadius: 24,
+  },
+  pillSelect: {
+    background: "transparent",
+    border: "none",
+    color: "#cbd5e1",
+    padding: "0 26px 0 14px",
+    fontSize: 13,
+    fontWeight: 500,
+    outline: "none",
+    cursor: "pointer",
+    flex: 1,
+    height: "100%",
+    appearance: "none",
+    WebkitAppearance: "none",
+    MozAppearance: "none",
+    backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 10 10'%3E%3Cpath fill='%2394a3b8' d='M1 3.5l4 4 4-4z'/%3E%3C/svg%3E")`,
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "right 12px center",
   },
   metricsRow: {
     display: "grid",
@@ -390,6 +574,83 @@ export default function FeedbackAndSuggestion() {
   const [categorySearch, setCategorySearch] = useState("");
   const [activeTab, setActiveTab] = useState("feedback");
   const [expandedTheme, setExpandedTheme] = useState(null);
+  const [drillDown, setDrillDown] = useState(null);
+  const [drillPage, setDrillPage] = useState(1);
+  const DRILL_PER_PAGE = 15;
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newText, setNewText] = useState("");
+  const [newProduct, setNewProduct] = useState("CFD");
+  const [newPriority, setNewPriority] = useState("Medium");
+  const [toast, setToast] = useState(null);
+  const openDrillDown = (data) => { setDrillDown(data); setDrillPage(1); };
+  const closeDrillDown = () => setDrillDown(null);
+
+  // ─── AI-simulated classification & headline generation ──
+  const classifyCategory = (text) => {
+    const t = text.toLowerCase();
+    const rules = [
+      { cat: "Payout Related Issue", kw: ["payout", "withdraw", "withdrawal", "payment processing time", "crypto payout"] },
+      { cat: "KYC_Issue", kw: ["kyc", "verification", "verify", "identity", "document"] },
+      { cat: "Offers & Coupons", kw: ["coupon", "discount", "promo", "offer", "promotional", "newsletter"] },
+      { cat: "Rules & Scaling", kw: ["scaling", "rules", "profit target", "drawdown", "challenge", "evaluation"] },
+      { cat: "Platform & Trading", kw: ["platform", "trading", "chart", "mt4", "mt5", "metatrader", "dark mode", "margin", "dashboard", "demo", "paper trading", "notification"] },
+      { cat: "Payment & Refunds", kw: ["refund", "billing", "charge", "invoice", "subscription"] },
+      { cat: "Support", kw: ["support", "live chat", "helpdesk", "service response", "weekend", "agent"] },
+      { cat: "Account Related Issue", kw: ["login", "password", "account", "access", "balance", "sign in", "session", "cookies"] },
+    ];
+    for (const r of rules) {
+      if (r.kw.some(k => t.includes(k))) return r.cat;
+    }
+    return "Platform & Trading"; // default fallback
+  };
+
+  const generateHeadline = (text) => {
+    const trimmed = text.trim();
+    // Use first sentence if short enough, otherwise truncate to ~80 chars
+    const firstSentence = trimmed.split(/[.!?]/)[0].trim();
+    if (firstSentence.length > 0 && firstSentence.length <= 100) return firstSentence;
+    if (trimmed.length <= 80) return trimmed;
+    return trimmed.slice(0, 80).trim() + "...";
+  };
+
+  const submitManualEntry = () => {
+    const text = newText.trim();
+    if (text.length < 10) {
+      setToast({ type: "error", message: "Please enter at least 10 characters" });
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+    const headline = generateHeadline(text);
+    const category = classifyCategory(text);
+    const prefix = activeTab === "feedback" ? "FB" : "SG";
+    const nextNum = String(feedbackData.length + 1).padStart(3, "0");
+    const today = new Date().toISOString().slice(0, 10);
+
+    const entry = {
+      id: `${prefix}-${nextNum}`,
+      chatId: "MANUAL",
+      date: today,
+      headline,
+      fullText: text,
+      category,
+      sentiment: "Neutral",
+      priority: newPriority,
+      status: "New",
+      type: activeTab,
+      product: newProduct,
+      common_topic: null,
+      manualPriority: true,
+    };
+
+    setFeedbackData(prev => [entry, ...prev]);
+    setShowAddModal(false);
+    setNewText("");
+    setNewProduct("CFD");
+    setNewPriority("Medium");
+    setCurrentPage(1);
+    setToast({ type: "success", message: `${activeTab === "feedback" ? "Feedback" : "Suggestion"} added successfully — AI categorized as "${category}"` });
+    setTimeout(() => setToast(null), 4000);
+  };
   const ITEMS_PER_PAGE = 8;
 
   const allData = useMemo(() => {
@@ -428,6 +689,14 @@ export default function FeedbackAndSuggestion() {
   }, [tabData]);
 
   const maxCatCount = categoryRanking[0]?.count || 1;
+
+  const drillDownData = useMemo(() => {
+    if (!drillDown) return [];
+    if (drillDown.type === "priority") return tabData.filter(f => f.priority === drillDown.value);
+    if (drillDown.type === "product") return tabData.filter(f => f.product === drillDown.value);
+    if (drillDown.type === "category") return tabData.filter(f => f.category === drillDown.value);
+    return [];
+  }, [drillDown, tabData]);
 
   // Summary metrics (scoped to active tab)
   const metrics = useMemo(() => {
@@ -487,66 +756,199 @@ export default function FeedbackAndSuggestion() {
     <div style={styles.page}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
-      {/* Header */}
-      <div style={styles.header}>
-        <span style={styles.headerIcon}>💡</span>
-        <span style={styles.headerTitle}>Feedback and Suggestion</span>
-      </div>
-
       <div style={styles.content}>
-        {/* Page Title */}
-        <div style={{ marginBottom: 20 }}>
-          <h1 style={styles.pageTitle}>Feedback and Suggestions</h1>
-          <p style={styles.pageSubtitle}>AI-identified customer insights and manually submitted feedback for product improvement.</p>
+        {/* Page Title Banner */}
+        <div style={{ marginBottom: 10 }}>
+          <div style={{
+            position: "relative",
+            background: "linear-gradient(90deg, rgba(30,27,75,0.6) 0%, rgba(15,20,32,0.7) 40%, rgba(10,15,25,0.6) 100%)",
+            border: "1px solid rgba(255,255,255,0.06)",
+            borderRadius: 14,
+            padding: "18px 24px 18px 34px",
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            overflow: "hidden",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+          }}>
+            {/* Glowing left accent */}
+            <div style={{
+              position: "absolute",
+              top: 10,
+              bottom: 10,
+              left: 14,
+              width: 3,
+              borderRadius: 2,
+              background: "linear-gradient(180deg, #8b5cf6, #6366f1)",
+              boxShadow: "0 0 12px rgba(139,92,246,0.6)",
+            }} />
+
+            {/* Icon */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", color: "#FF2E97", flexShrink: 0, filter: "drop-shadow(0 0 8px rgba(255,46,151,0.4))" }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            </div>
+
+            {/* Title */}
+            <h1 style={{ ...styles.pageTitle, fontSize: 20 }}>Feedback and Suggestions</h1>
+          </div>
+          <p style={{ ...styles.pageSubtitle, marginTop: 10, paddingLeft: 4 }}>AI-identified customer insights and manually submitted feedback for product improvement.</p>
         </div>
 
-        {/* Tab Switcher */}
+        {/* Tab Switcher + Add Button */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, gap: 16, flexWrap: "wrap" }}>
+          <div style={{
+            display: "inline-flex",
+            background: "rgba(255,255,255,0.04)",
+            borderRadius: 10,
+            padding: 3,
+            border: "1px solid rgba(255,255,255,0.06)",
+          }}>
+            {[
+              { key: "feedback", label: "Feedback" },
+              { key: "suggestion", label: "Suggestions" },
+            ].map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => { setActiveTab(tab.key); setCurrentPage(1); setFilterCategory("All"); setFilterProduct("All"); setExpandedTheme(null); }}
+                style={{
+                  padding: "8px 24px",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  border: "none",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                  background: activeTab === tab.key ? "rgba(99,102,241,0.2)" : "transparent",
+                  color: activeTab === tab.key ? "#818cf8" : "#64748b",
+                  boxShadow: activeTab === tab.key ? "0 0 12px rgba(99,102,241,0.1)" : "none",
+                }}
+              >
+                {tab.label}
+                <span style={{
+                  marginLeft: 8,
+                  fontSize: 11,
+                  padding: "2px 7px",
+                  borderRadius: 6,
+                  background: activeTab === tab.key ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.06)",
+                  color: activeTab === tab.key ? "#a5b4fc" : "#475569",
+                }}>
+                  {allData.filter(f => f.type === tab.key).length}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Add new button */}
+          <button
+            onClick={() => setShowAddModal(true)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+              border: "none",
+              color: "#fff",
+              padding: "10px 20px",
+              borderRadius: 10,
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+              boxShadow: "0 4px 14px rgba(99,102,241,0.3)",
+              transition: "transform 0.1s, box-shadow 0.15s",
+            }}
+            onMouseOver={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 18px rgba(99,102,241,0.45)"; }}
+            onMouseOut={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(99,102,241,0.3)"; }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            New {activeTab === "feedback" ? "Feedback" : "Suggestion"}
+          </button>
+        </div>
+
+        {/* Filter Bar — sticky */}
         <div style={{
-          display: "inline-flex",
-          background: "rgba(255,255,255,0.04)",
-          borderRadius: 10,
-          padding: 3,
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          flexWrap: "wrap",
           marginBottom: 24,
-          border: "1px solid rgba(255,255,255,0.06)",
+          padding: "12px 0",
+          background: "rgba(11,15,20,0.85)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
+          borderBottom: "1px solid rgba(255,255,255,0.04)",
+          marginLeft: -28,
+          marginRight: -28,
+          paddingLeft: 28,
+          paddingRight: 28,
         }}>
-          {[
-            { key: "feedback", label: "Feedback" },
-            { key: "suggestion", label: "Suggestions" },
-          ].map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => { setActiveTab(tab.key); setCurrentPage(1); setFilterCategory("All"); setFilterProduct("All"); setExpandedTheme(null); }}
-              style={{
-                padding: "8px 24px",
-                fontSize: 13,
-                fontWeight: 600,
-                border: "none",
-                borderRadius: 8,
-                cursor: "pointer",
-                transition: "all 0.2s",
-                background: activeTab === tab.key ? "rgba(99,102,241,0.2)" : "transparent",
-                color: activeTab === tab.key ? "#818cf8" : "#64748b",
-                boxShadow: activeTab === tab.key ? "0 0 12px rgba(99,102,241,0.1)" : "none",
-              }}
-            >
-              {tab.label}
-              <span style={{
-                marginLeft: 8,
-                fontSize: 11,
-                padding: "2px 7px",
-                borderRadius: 6,
-                background: activeTab === tab.key ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.06)",
-                color: activeTab === tab.key ? "#a5b4fc" : "#475569",
-              }}>
-                {allData.filter(f => f.type === tab.key).length}
-              </span>
-            </button>
-          ))}
-        </div>
+          <DateRangePicker
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            onApply={(from, to) => { setDateFrom(from); setDateTo(to); setCurrentPage(1); }}
+          />
+          <PillDropdown
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
+              </svg>
+            }
+            label="All Categories"
+            value={filterCategory}
+            onChange={v => { setFilterCategory(v); setCurrentPage(1); }}
+            options={[
+              { value: "All", label: "All Categories" },
+              ...Object.keys(CATEGORIES_META).map(c => ({ value: c, label: c })),
+            ]}
+          />
+          <PillDropdown
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 21V4" />
+                <path d="M5 4h11l-2 4 2 4H5" />
+              </svg>
+            }
+            label="All Priorities"
+            value={filterPriority}
+            onChange={v => { setFilterPriority(v); setCurrentPage(1); }}
+            searchable={false}
+            options={[
+              { value: "All", label: "All Priorities" },
+              { value: "High", label: "High" },
+              { value: "Medium", label: "Medium" },
+              { value: "Low", label: "Low" },
+            ]}
+          />
+          <PillDropdown
+            icon={
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                <line x1="12" y1="22.08" x2="12" y2="12" />
+              </svg>
+            }
+            label="All Products"
+            value={filterProduct}
+            onChange={v => { setFilterProduct(v); setCurrentPage(1); }}
+            searchable={false}
+            options={[
+              { value: "All", label: "All Products" },
+              { value: "CFD", label: "CFD" },
+              { value: "Futures", label: "Futures" },
+            ]}
+          />
+          {/* Spacer to push search right */}
+          <div style={{ flex: "1 1 0", minWidth: 0 }} />
 
-        {/* Filter Bar */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 24 }}>
-          <div style={{ position: "relative", flex: "1 1 220px", maxWidth: 280 }}>
+          {/* Search Feedback */}
+          <div style={{ position: "relative", flex: "0 1 280px", maxWidth: 280 }}>
             <input
               type="text"
               placeholder="🔍  Search feedback..."
@@ -555,155 +957,185 @@ export default function FeedbackAndSuggestion() {
               style={{ ...styles.input, paddingLeft: 14, height: 38 }}
             />
           </div>
-          <select style={styles.filterSelect} value={filterCategory} onChange={e => { setFilterCategory(e.target.value); setCurrentPage(1); }}>
-            <option value="All">All Categories</option>
-            {Object.keys(CATEGORIES_META).map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <select style={styles.filterSelect} value={filterPriority} onChange={e => { setFilterPriority(e.target.value); setCurrentPage(1); }}>
-            <option value="All">All Priorities</option>
-            <option value="High">High</option>
-            <option value="Medium">Medium</option>
-            <option value="Low">Low</option>
-          </select>
-          <select style={styles.filterSelect} value={filterProduct} onChange={e => { setFilterProduct(e.target.value); setCurrentPage(1); }}>
-            <option value="All">All Products</option>
-            <option value="CFD">CFD</option>
-            <option value="Futures">Futures</option>
-          </select>
-          {/* Spacer to push date filter right */}
-          <div style={{ flex: "1 1 0", minWidth: 0 }} />
-
-          {/* Date Filter */}
-          <DateRangePicker
-            dateFrom={dateFrom}
-            dateTo={dateTo}
-            onApply={(from, to) => { setDateFrom(from); setDateTo(to); setCurrentPage(1); }}
-          />
         </div>
 
-        {/* Total Feedback (left) + Top Feedback Areas (right) */}
-        <div style={{ display: "grid", gridTemplateColumns: "480px 1fr", gap: 20, marginBottom: 24, alignItems: "stretch" }}>
-          {/* Total Feedback with Pie Chart */}
-          <div style={styles.card}>
-            <div style={styles.cardHeader}>
-              <div style={styles.cardTitle}>
-                <span style={styles.cardTitleIcon}>📋</span>
-                Total Feedback
-              </div>
-            </div>
-            <div style={{ padding: "24px 18px", display: "flex", alignItems: "center", justifyContent: "center", gap: 28, flex: 1 }}>
-              {(() => {
-                const segments = [
-                  { label: "High", count: allData.filter(f => f.priority === "High").length, color: "#ef4444", glow: "rgba(239,68,68,0.3)" },
-                  { label: "Medium", count: allData.filter(f => f.priority === "Medium").length, color: "#eab308", glow: "rgba(234,179,8,0.3)" },
-                  { label: "Low", count: allData.filter(f => f.priority === "Low").length, color: "#22c55e", glow: "rgba(34,197,94,0.3)" },
-                ];
-                const total = segments.reduce((s, p) => s + p.count, 0) || 1;
-                const size = 160;
-                const cx = size / 2;
-                const cy = size / 2;
-                const outerR = 68;
-                const innerR = 44;
-                const toRad = (deg) => (deg * Math.PI) / 180;
-                let cumAngle = -90;
+        {/* Top Feedback Areas (left) + Total Feedback (right) */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 480px", gap: 20, marginBottom: 24, alignItems: "stretch" }}>
+          {/* Total Feedback + Product Type Card */}
+          <div style={{ ...styles.card, order: 2, display: "flex", flexDirection: "column" }}>
+            {(() => {
+              const toRad = (deg) => (deg * Math.PI) / 180;
+              const size = 130;
+              const cx = size / 2;
+              const cy = size / 2;
+              const outerR = 56;
+              const innerR = 36;
 
+              const arcPath = (startAngle, angle) => {
+                if (angle >= 359.99) {
+                  return `M ${cx} ${cy - outerR} A ${outerR} ${outerR} 0 1 1 ${cx - 0.001} ${cy - outerR} L ${cx - 0.001} ${cy - innerR} A ${innerR} ${innerR} 0 1 0 ${cx} ${cy - innerR} Z`;
+                }
+                const end = startAngle + angle;
+                const large = angle > 180 ? 1 : 0;
+                const x1 = cx + outerR * Math.cos(toRad(startAngle));
+                const y1 = cy + outerR * Math.sin(toRad(startAngle));
+                const x2 = cx + outerR * Math.cos(toRad(end));
+                const y2 = cy + outerR * Math.sin(toRad(end));
+                const ix1 = cx + innerR * Math.cos(toRad(end));
+                const iy1 = cy + innerR * Math.sin(toRad(end));
+                const ix2 = cx + innerR * Math.cos(toRad(startAngle));
+                const iy2 = cy + innerR * Math.sin(toRad(startAngle));
+                return `M ${x1} ${y1} A ${outerR} ${outerR} 0 ${large} 1 ${x2} ${y2} L ${ix1} ${iy1} A ${innerR} ${innerR} 0 ${large} 0 ${ix2} ${iy2} Z`;
+              };
+
+              const buildSlices = (segments) => {
+                const total = segments.reduce((s, p) => s + p.count, 0) || 1;
+                let cumAngle = -90;
                 const slices = segments.map(s => {
                   const angle = (s.count / total) * 360;
                   const start = cumAngle;
                   cumAngle += angle;
-                  const midAngle = start + angle / 2;
-                  return { ...s, startAngle: start, angle, midAngle };
+                  return { ...s, startAngle: start, angle };
                 });
+                return { slices, total };
+              };
 
-                const arcPath = (startAngle, angle, r, ir) => {
-                  if (angle >= 359.99) {
-                    return `M ${cx} ${cy - r} A ${r} ${r} 0 1 1 ${cx - 0.001} ${cy - r} L ${cx - 0.001} ${cy - ir} A ${ir} ${ir} 0 1 0 ${cx} ${cy - ir} Z`;
-                  }
-                  const end = startAngle + angle;
-                  const large = angle > 180 ? 1 : 0;
-                  const x1 = cx + r * Math.cos(toRad(startAngle));
-                  const y1 = cy + r * Math.sin(toRad(startAngle));
-                  const x2 = cx + r * Math.cos(toRad(end));
-                  const y2 = cy + r * Math.sin(toRad(end));
-                  const ix1 = cx + ir * Math.cos(toRad(end));
-                  const iy1 = cy + ir * Math.sin(toRad(end));
-                  const ix2 = cx + ir * Math.cos(toRad(startAngle));
-                  const iy2 = cy + ir * Math.sin(toRad(startAngle));
-                  return `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} L ${ix1} ${iy1} A ${ir} ${ir} 0 ${large} 0 ${ix2} ${iy2} Z`;
-                };
+              const renderDonut = (slices, total, gradPrefix, centerLabel, drillType) => (
+                <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+                  <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ filter: "drop-shadow(0 0 12px rgba(0,0,0,0.4))" }}>
+                    <defs>
+                      {slices.map((s, i) => (
+                        <linearGradient key={i} id={`${gradPrefix}-${i}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor={s.color} stopOpacity="1" />
+                          <stop offset="100%" stopColor={s.colorEnd || s.color} stopOpacity="0.9" />
+                        </linearGradient>
+                      ))}
+                    </defs>
+                    <circle cx={cx} cy={cy} r={outerR} fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth={outerR - innerR} />
+                    {slices.map((s, i) => s.count > 0 && (
+                      <path
+                        key={i}
+                        d={arcPath(s.startAngle, s.angle)}
+                        fill={`url(#${gradPrefix}-${i})`}
+                        stroke="#0b0f14"
+                        strokeWidth={2}
+                        style={{ filter: `drop-shadow(0 0 10px ${s.glow})`, cursor: "pointer", transition: "opacity 0.15s" }}
+                        onClick={() => openDrillDown({ type: drillType, value: s.label, label: s.label, color: s.color })}
+                        onMouseOver={e => e.currentTarget.style.opacity = "0.8"}
+                        onMouseOut={e => e.currentTarget.style.opacity = "1"}
+                      />
+                    ))}
+                    <circle cx={cx} cy={cy} r={innerR - 4} fill="#0b0f14" />
+                    <circle cx={cx} cy={cy} r={innerR - 4} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth={1} />
+                    <text x={cx} y={cy - 5} textAnchor="middle" fill="#f1f5f9" fontSize={20} fontWeight={700} fontFamily="'DM Sans', sans-serif">{total}</text>
+                    <text x={cx} y={cy + 10} textAnchor="middle" fill="#64748b" fontSize={9} fontWeight={500} fontFamily="'DM Sans', sans-serif">{centerLabel}</text>
+                  </svg>
+                </div>
+              );
 
-                return (
-                  <>
-                    {/* Pie Chart */}
-                    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
-                      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ filter: "drop-shadow(0 0 12px rgba(0,0,0,0.4))" }}>
-                        <defs>
-                          {slices.map((s, i) => (
-                            <linearGradient key={i} id={`grad-${i}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                              <stop offset="0%" stopColor={s.color} stopOpacity="1" />
-                              <stop offset="100%" stopColor={s.color} stopOpacity="0.65" />
-                            </linearGradient>
-                          ))}
-                        </defs>
-                        {/* Background ring */}
-                        <circle cx={cx} cy={cy} r={outerR} fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth={outerR - innerR} />
-                        {/* Slices */}
-                        {slices.map((s, i) => s.count > 0 && (
-                          <path
-                            key={i}
-                            d={arcPath(s.startAngle, s.angle, outerR, innerR)}
-                            fill={`url(#grad-${i})`}
-                            stroke="#0b0f14"
-                            strokeWidth={2.5}
-                            style={{ filter: `drop-shadow(0 0 6px ${s.glow})` }}
-                          />
-                        ))}
-                        {/* Center circle */}
-                        <circle cx={cx} cy={cy} r={innerR - 4} fill="#0b0f14" />
-                        <circle cx={cx} cy={cy} r={innerR - 4} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth={1} />
-                        {/* Center text */}
-                        <text x={cx} y={cy - 6} textAnchor="middle" fill="#f1f5f9" fontSize={24} fontWeight={700} fontFamily="'DM Sans', sans-serif">{total}</text>
-                        <text x={cx} y={cy + 10} textAnchor="middle" fill="#64748b" fontSize={10} fontWeight={500} fontFamily="'DM Sans', sans-serif">Total</text>
-                      </svg>
-                    </div>
-
-                    {/* Legend */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                      {slices.map((s, i) => {
-                        const pct = ((s.count / total) * 100).toFixed(0);
-                        return (
-                          <div key={i} style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                            <div style={{
-                              width: 14, height: 14, borderRadius: "50%",
-                              background: `linear-gradient(135deg, ${s.color}, ${s.color}99)`,
-                              boxShadow: `0 0 8px ${s.glow}`,
-                              flexShrink: 0,
-                            }} />
-                            <div>
-                              <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                                <span style={{ fontSize: 20, fontWeight: 700, color: s.color }}>{s.count}</span>
-                                <span style={{ fontSize: 12, color: "#64748b", fontWeight: 400 }}>{pct}%</span>
-                              </div>
-                              <div style={{ fontSize: 12, color: "#94a3b8", fontWeight: 500 }}>{s.label} Priority</div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                      <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 12, marginTop: 2 }}>
-                        <div style={{ fontSize: 11, color: "#475569" }}>AI-detected + manual entries</div>
+              const renderLegend = (slices, total, suffix, drillType) => (
+                <div style={{ display: "flex", flexDirection: "row", gap: 20, justifyContent: "center", flexWrap: "wrap" }}>
+                  {slices.map((s, i) => {
+                    const pct = ((s.count / total) * 100).toFixed(0);
+                    return (
+                      <div key={i}
+                        style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", padding: "4px 8px", borderRadius: 8, transition: "background 0.15s" }}
+                        onClick={() => openDrillDown({ type: drillType, value: s.label, label: s.label, color: s.color })}
+                        onMouseOver={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
+                        onMouseOut={e => e.currentTarget.style.background = "transparent"}
+                      >
+                        <div style={{
+                          width: 10, height: 10, borderRadius: "50%",
+                          background: `linear-gradient(135deg, ${s.color}, ${s.colorEnd || s.color})`,
+                          boxShadow: `0 0 10px ${s.glow}`,
+                          flexShrink: 0,
+                        }} />
+                        <span style={{ fontSize: 14, fontWeight: 700, color: s.color }}>{s.count}</span>
+                        <span style={{ fontSize: 11, color: "#64748b" }}>{pct}%</span>
+                        <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 500 }}>{s.label}{suffix ? ` ${suffix}` : ""}</span>
                       </div>
+                    );
+                  })}
+                </div>
+              );
+
+              const prioritySegments = [
+                { label: "High", count: tabData.filter(f => f.priority === "High").length, color: "#FF2E97", colorEnd: "#FF69B4", glow: "rgba(255,46,151,0.5)" },
+                { label: "Medium", count: tabData.filter(f => f.priority === "Medium").length, color: "#A855F7", colorEnd: "#C084FC", glow: "rgba(168,85,247,0.5)" },
+                { label: "Low", count: tabData.filter(f => f.priority === "Low").length, color: "#00F0FF", colorEnd: "#67E8F9", glow: "rgba(0,240,255,0.5)" },
+              ];
+              const priority = buildSlices(prioritySegments);
+
+              const productSegments = [
+                { label: "CFD", count: tabData.filter(f => f.product === "CFD").length, color: "#00B4FF", colorEnd: "#0066FF", glow: "rgba(0,180,255,0.5)" },
+                { label: "Futures", count: tabData.filter(f => f.product === "Futures").length, color: "#BF00FF", colorEnd: "#7C4DFF", glow: "rgba(191,0,255,0.5)" },
+              ];
+              const product = buildSlices(productSegments);
+
+              const sectionStyle = {
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+              };
+
+              const titleStyle = {
+                padding: "14px 18px 0",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#94a3b8",
+                letterSpacing: 0.5,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              };
+
+              const chartRowStyle = {
+                flex: 1,
+                padding: "12px 18px",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 16,
+              };
+
+              return (
+                <>
+                  {/* Priority Breakdown */}
+                  <div style={sectionStyle}>
+                    <div style={titleStyle}>
+                      <span>📋</span> Total {activeTab === "feedback" ? "Feedback" : "Suggestions"}
                     </div>
-                  </>
-                );
-              })()}
-            </div>
+                    <div style={chartRowStyle}>
+                      {renderDonut(priority.slices, priority.total, "pri", "Total", "priority")}
+                      {renderLegend(priority.slices, priority.total, "Priority", "priority")}
+                    </div>
+                  </div>
+
+                  {/* Divider */}
+                  <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "0 18px", flexShrink: 0 }} />
+
+                  {/* Product Breakdown */}
+                  <div style={sectionStyle}>
+                    <div style={titleStyle}>
+                      <span>📦</span> Product Type
+                    </div>
+                    <div style={chartRowStyle}>
+                      {renderDonut(product.slices, product.total, "prod", "Total", "product")}
+                      {renderLegend(product.slices, product.total, "", "product")}
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
           </div>
           {/* Top Feedback Areas */}
-          <div style={{ ...styles.card, display: "flex", flexDirection: "column", maxHeight: 600 }}>
+          <div style={{ ...styles.card, display: "flex", flexDirection: "column", maxHeight: 600, order: 1 }}>
             <div style={styles.cardHeader}>
               <div style={styles.cardTitle}>
                 <span style={styles.cardTitleIcon}>🏆</span>
-                Top Feedback Areas
+                Top {activeTab === "feedback" ? "Feedback" : "Suggestion"} Category
                 <span style={{ fontSize: 11, color: "#475569", fontWeight: 400, marginLeft: 4 }}>{categoryRanking.length}</span>
               </div>
             </div>
@@ -744,11 +1176,10 @@ export default function FeedbackAndSuggestion() {
                     borderBottom: "1px solid rgba(255,255,255,0.03)",
                     cursor: "pointer",
                     transition: "background 0.15s",
-                    background: filterCategory === item.category ? "rgba(99,102,241,0.08)" : "transparent",
                   }}
-                  onClick={() => { setFilterCategory(filterCategory === item.category ? "All" : item.category); setCurrentPage(1); }}
-                  onMouseOver={e => e.currentTarget.style.background = filterCategory === item.category ? "rgba(99,102,241,0.12)" : "rgba(255,255,255,0.02)"}
-                  onMouseOut={e => e.currentTarget.style.background = filterCategory === item.category ? "rgba(99,102,241,0.08)" : "transparent"}
+                  onClick={() => openDrillDown({ type: "category", value: item.category, label: item.category, color: item.meta.color })}
+                  onMouseOver={e => e.currentTarget.style.background = "rgba(255,255,255,0.02)"}
+                  onMouseOut={e => e.currentTarget.style.background = "transparent"}
                 >
                   <div style={{
                     width: 26, height: 26, borderRadius: 7,
@@ -781,9 +1212,7 @@ export default function FeedbackAndSuggestion() {
             </div>
             <div style={{ padding: "10px 16px", borderTop: "1px solid rgba(255,255,255,0.04)", flexShrink: 0 }}>
               <div style={{ fontSize: 11, color: "#475569", textAlign: "center" }}>
-                {filterCategory !== "All" ? (
-                  <span>Filtered by <span style={{ color: "#818cf8" }}>{filterCategory}</span> — <span style={{ cursor: "pointer", color: "#f87171" }} onClick={() => { setFilterCategory("All"); setCurrentPage(1); }}>clear</span></span>
-                ) : "Click a category to filter the feedback table"}
+                Click a category to view its feedbacks
               </div>
             </div>
           </div>
@@ -958,7 +1387,7 @@ export default function FeedbackAndSuggestion() {
             <div style={styles.cardHeader}>
               <div style={styles.cardTitle}>
                 <span style={styles.cardTitleIcon}>🔁</span>
-                Common {activeTab === "feedback" ? "Feedback" : "Suggestions"}
+                Feedback Area
                 <span style={{ fontSize: 12, color: "#475569", fontWeight: 400, marginLeft: 8 }}>
                   {commonThemes.length} recurring {commonThemes.length === 1 ? "pattern" : "patterns"} detected
                 </span>
@@ -969,17 +1398,37 @@ export default function FeedbackAndSuggestion() {
                 <thead>
                   <tr>
                     <th style={{ ...styles.th, width: 40 }}>#</th>
-                    <th style={styles.th}>Recurring Topic</th>
-                    <th style={{ ...styles.th, width: 100, textAlign: "center" }}>Occurrences</th>
-                    <th style={{ ...styles.th, width: 200 }}>Frequency</th>
+                    <th style={styles.th}>Feedback Area</th>
+                    <th style={{ ...styles.th, width: 90, textAlign: "center" }}>Count</th>
+                    <th style={styles.th}>Category</th>
+                    <th style={{ ...styles.th, width: 110 }}>Product</th>
+                    <th style={{ ...styles.th, width: 110 }}>Priority</th>
                   </tr>
                 </thead>
                 <tbody>
                   {commonThemes.map((t, i) => {
-                    const maxCount = commonThemes[0]?.count || 1;
-                    const pct = (t.count / maxCount) * 100;
-                    const barColor = i === 0 ? "#ef4444" : i === 1 ? "#f59e0b" : i === 2 ? "#3b82f6" : "#6366f1";
+                    const barColor = i === 0 ? "#FF2E97" : i === 1 ? "#A855F7" : i === 2 ? "#00F0FF" : "#6366f1";
                     const isExpanded = expandedTheme === t.theme;
+
+                    // Derive dominant or "Mixed" values across the theme's items
+                    const uniqueCategories = [...new Set(t.items.map(it => it.category))];
+                    const themeCategory = uniqueCategories.length === 1 ? uniqueCategories[0] : "Mixed";
+
+                    const uniqueProducts = [...new Set(t.items.map(it => it.product))];
+                    const themeProduct = uniqueProducts.length === 1 ? uniqueProducts[0] : "Mixed";
+
+                    const priorityRank = { High: 3, Medium: 2, Low: 1 };
+                    const uniquePriorities = [...new Set(t.items.map(it => it.priority))];
+                    const themePriority = uniquePriorities.length === 1
+                      ? uniquePriorities[0]
+                      : (uniquePriorities.every(p => p === uniquePriorities[0]) ? uniquePriorities[0] : "Mixed");
+
+                    const productStyle = themeProduct === "CFD"
+                      ? { bg: "rgba(56,189,248,0.15)", color: "#38bdf8" }
+                      : themeProduct === "Futures"
+                      ? { bg: "rgba(168,85,247,0.15)", color: "#a855f7" }
+                      : { bg: "rgba(148,163,184,0.12)", color: "#94a3b8" };
+
                     return (
                       <React.Fragment key={t.theme}>
                       <tr
@@ -988,7 +1437,7 @@ export default function FeedbackAndSuggestion() {
                         onMouseOver={e => { if (!isExpanded) e.currentTarget.style.background = "rgba(255,255,255,0.02)"; }}
                         onMouseOut={e => { if (!isExpanded) e.currentTarget.style.background = "transparent"; }}
                       >
-                        <td style={{ ...styles.td, textAlign: "center", fontWeight: 700, fontSize: 14, color: i === 0 ? "#eab308" : i === 1 ? "#94a3b8" : i === 2 ? "#b4783c" : "#475569" }}>
+                        <td style={{ ...styles.td, textAlign: "center", fontWeight: 700, fontSize: 14, color: i < 3 ? barColor : "#64748b" }}>
                           {i + 1}
                         </td>
                         <td style={{ ...styles.td, fontWeight: 500, color: "#e2e8f0" }}>
@@ -1012,72 +1461,138 @@ export default function FeedbackAndSuggestion() {
                           </span>
                         </td>
                         <td style={styles.td}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <div style={{ flex: 1, background: "rgba(255,255,255,0.04)", borderRadius: 4, height: 8, overflow: "hidden" }}>
-                              <div style={{
-                                height: "100%",
-                                borderRadius: 4,
-                                background: `linear-gradient(90deg, ${barColor}, ${barColor}88)`,
-                                width: `${pct}%`,
-                                transition: "width 0.5s ease",
-                              }} />
-                            </div>
-                            <span style={{ fontSize: 11, color: "#64748b", minWidth: 32, textAlign: "right" }}>
-                              {((t.count / tabData.length) * 100).toFixed(0)}%
+                          {themeCategory === "Mixed" ? (
+                            <span style={{ fontSize: 12, color: "#94a3b8", fontStyle: "italic" }}>Mixed</span>
+                          ) : (
+                            <span style={{ fontSize: 12, color: CATEGORIES_META[themeCategory]?.color || "#64748b" }}>
+                              {CATEGORIES_META[themeCategory]?.icon} {themeCategory}
                             </span>
-                          </div>
+                          )}
+                        </td>
+                        <td style={styles.td}>
+                          <span style={{
+                            display: "inline-block",
+                            padding: "3px 10px",
+                            borderRadius: 20,
+                            fontSize: 11,
+                            fontWeight: 600,
+                            background: productStyle.bg,
+                            color: productStyle.color,
+                            whiteSpace: "nowrap",
+                          }}>{themeProduct}</span>
+                        </td>
+                        <td style={styles.td}>
+                          {themePriority === "Mixed" ? (
+                            <span style={{
+                              display: "inline-block",
+                              padding: "3px 10px",
+                              borderRadius: 20,
+                              fontSize: 11,
+                              fontWeight: 600,
+                              background: "rgba(148,163,184,0.12)",
+                              color: "#94a3b8",
+                            }}>Mixed</span>
+                          ) : (
+                            <span style={styles.badge(PRIORITY_COLORS[themePriority].bg, PRIORITY_COLORS[themePriority].text)}>
+                              <span style={styles.dotPulse(PRIORITY_COLORS[themePriority].dot)}></span>
+                              {themePriority}
+                            </span>
+                          )}
                         </td>
                       </tr>
-                      {isExpanded && (
-                        <tr>
-                          <td colSpan={4} style={{ padding: 0, borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
-                            <div style={{
-                              background: "rgba(0,0,0,0.2)",
-                              padding: "12px 16px",
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: 10,
-                            }}>
-                              {t.items.map(item => (
-                                <div
-                                  key={item.id}
-                                  style={{
-                                    background: "rgba(255,255,255,0.03)",
-                                    border: "1px solid rgba(255,255,255,0.06)",
-                                    borderRadius: 10,
-                                    padding: "14px 18px",
-                                    cursor: "pointer",
-                                    transition: "border-color 0.2s, background 0.2s",
-                                  }}
-                                  onClick={(e) => { e.stopPropagation(); setSelectedFeedback(item); }}
-                                  onMouseOver={e => { e.currentTarget.style.borderColor = "rgba(99,102,241,0.3)"; e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
-                                  onMouseOut={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+                      {isExpanded && t.items.map((item, idx) => {
+                        const isLast = idx === t.items.length - 1;
+                        const childTdBase = {
+                          padding: "10px 16px",
+                          fontSize: 12,
+                          color: "#94a3b8",
+                          background: "rgba(0,0,0,0.2)",
+                          borderBottom: isLast ? "1px solid rgba(255,255,255,0.03)" : "none",
+                          verticalAlign: "middle",
+                        };
+                        return (
+                          <tr
+                            key={item.id}
+                            onClick={e => e.stopPropagation()}
+                            onMouseOver={e => Array.from(e.currentTarget.children).forEach(td => td.style.background = "rgba(255,255,255,0.02)")}
+                            onMouseOut={e => Array.from(e.currentTarget.children).forEach(td => td.style.background = "rgba(0,0,0,0.2)")}
+                          >
+                            {/* Column 1: left border indicator in place of # */}
+                            <td style={{ ...childTdBase, padding: 0, position: "relative" }}>
+                              <div style={{ position: "absolute", left: 20, top: 0, bottom: 0, width: 2, background: barColor }} />
+                            </td>
+
+                            {/* Column 2: Date · Chat ID · Headline (spans into Feedback Area column) */}
+                            <td style={{ ...childTdBase, color: "#e2e8f0" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                <span style={{ fontSize: 11, color: "#64748b", fontFamily: "monospace", whiteSpace: "nowrap" }}>
+                                  {item.date}
+                                </span>
+                                <span style={{ color: "#334155", fontSize: 10 }}>·</span>
+                                <span
+                                  style={{ flex: 1, fontSize: 13, color: "#e2e8f0", fontWeight: 500, cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}
+                                  onClick={() => setSelectedFeedback(item)}
+                                  onMouseOver={e => e.target.style.color = "#22c55e"}
+                                  onMouseOut={e => e.target.style.color = "#e2e8f0"}
                                 >
-                                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                      <span style={{ fontSize: 11, color: "#64748b", fontFamily: "'JetBrains Mono', monospace" }}>{item.id}</span>
-                                      <span style={{ fontSize: 11, color: "#475569" }}>{item.date}</span>
-                                      <span style={{ fontSize: 11, color: CATEGORIES_META[item.category]?.color || "#64748b" }}>
-                                        {CATEGORIES_META[item.category]?.icon} {item.category}
-                                      </span>
-                                    </div>
-                                    <span style={styles.badge(PRIORITY_COLORS[item.priority].bg, PRIORITY_COLORS[item.priority].text)}>
-                                      <span style={styles.dotPulse(PRIORITY_COLORS[item.priority].dot)}></span>
-                                      {item.priority}
-                                    </span>
-                                  </div>
-                                  <div style={{ fontSize: 13, fontWeight: 500, color: "#e2e8f0", marginBottom: 4 }}>
-                                    {item.headline}
-                                  </div>
-                                  <div style={{ fontSize: 12, color: "#64748b", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                                    {item.fullText}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </td>
-                        </tr>
-                      )}
+                                  {item.headline}
+                                </span>
+                                <span style={{ color: "#334155", fontSize: 10 }}>·</span>
+                                <span
+                                  style={{ fontSize: 11, color: "#38bdf8", fontWeight: 600, fontFamily: "monospace", cursor: "pointer", whiteSpace: "nowrap" }}
+                                  onClick={() => setViewingChat(item)}
+                                  onMouseOver={e => e.target.style.color = "#7dd3fc"}
+                                  onMouseOut={e => e.target.style.color = "#38bdf8"}
+                                >
+                                  {item.chatId}
+                                </span>
+                              </div>
+                            </td>
+
+                            {/* Column 3: Count (empty) */}
+                            <td style={childTdBase}></td>
+
+                            {/* Column 4: Category (empty) */}
+                            <td style={childTdBase}></td>
+
+                            {/* Column 5: Product — aligned with parent */}
+                            <td style={childTdBase}>
+                              <span style={{
+                                display: "inline-block",
+                                padding: "3px 10px",
+                                borderRadius: 20,
+                                fontSize: 11,
+                                fontWeight: 600,
+                                background: item.product === "CFD" ? "rgba(56,189,248,0.15)" : "rgba(168,85,247,0.15)",
+                                color: item.product === "CFD" ? "#38bdf8" : "#a855f7",
+                                whiteSpace: "nowrap",
+                              }}>{item.product}</span>
+                            </td>
+
+                            {/* Column 6: Priority — aligned with parent */}
+                            <td style={childTdBase}>
+                              <span style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 5,
+                                padding: "3px 10px",
+                                borderRadius: 20,
+                                fontSize: 11,
+                                fontWeight: 600,
+                                background: PRIORITY_COLORS[item.priority].bg,
+                                color: PRIORITY_COLORS[item.priority].text,
+                                whiteSpace: "nowrap",
+                              }}>
+                                <span style={{
+                                  width: 5, height: 5, borderRadius: "50%",
+                                  background: PRIORITY_COLORS[item.priority].dot,
+                                }} />
+                                {item.priority}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
                       </React.Fragment>
                     );
                   })}
@@ -1091,7 +1606,7 @@ export default function FeedbackAndSuggestion() {
 
       {/* Modal: Feedback Detail */}
       {selectedFeedback && (
-        <div style={styles.modal}>
+        <div style={{ ...styles.modal, zIndex: 1100 }}>
           <div style={styles.modalOverlay} onClick={() => setSelectedFeedback(null)} />
           <div style={styles.modalContent}>
             <button style={styles.closeBtn} onClick={() => setSelectedFeedback(null)}>✕</button>
@@ -1162,7 +1677,7 @@ export default function FeedbackAndSuggestion() {
 
       {/* Modal: Chat Viewer */}
       {viewingChat && (
-        <div style={styles.modal}>
+        <div style={{ ...styles.modal, zIndex: 1200 }}>
           <div style={styles.modalOverlay} onClick={() => setViewingChat(null)} />
           <div style={styles.modalContent}>
             <button style={styles.closeBtn} onClick={() => setViewingChat(null)}>✕</button>
@@ -1202,6 +1717,352 @@ export default function FeedbackAndSuggestion() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Drill-Down Modal */}
+      {drillDown && (() => {
+        const totalDrillPages = Math.ceil(drillDownData.length / DRILL_PER_PAGE);
+        const drillPaginated = drillDownData.slice((drillPage - 1) * DRILL_PER_PAGE, drillPage * DRILL_PER_PAGE);
+        const drillStart = (drillPage - 1) * DRILL_PER_PAGE + 1;
+        const drillEnd = Math.min(drillPage * DRILL_PER_PAGE, drillDownData.length);
+        const isCategory = drillDown.type === "category";
+        const headers = isCategory
+          ? ["Chat ID", "Date", "Headline", "Priority", "Product", "Status"]
+          : ["Chat ID", "Date", "Headline", "Category", drillDown.type === "priority" ? "Product" : "Priority", "Status"];
+
+        const exportDrillCSV = () => {
+          const csvHeaders = headers;
+          const escapeCSV = (val) => { const s = String(val ?? ""); return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s; };
+          const rows = drillDownData.map(fb => (isCategory
+            ? [fb.chatId, fb.date, fb.headline, fb.priority, fb.product, fb.status]
+            : [fb.chatId, fb.date, fb.headline, fb.category, drillDown.type === "priority" ? fb.product : fb.priority, fb.status]
+          ).map(escapeCSV).join(","));
+          const csv = [csvHeaders.join(","), ...rows].join("\n");
+          const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a"); a.href = url;
+          a.download = `${drillDown.label}-${drillDown.type}-drilldown.csv`;
+          a.click(); URL.revokeObjectURL(url);
+        };
+
+        const pgBtnStyle = (active) => ({
+          background: active ? "rgba(99,102,241,0.2)" : "rgba(255,255,255,0.04)",
+          border: active ? "1px solid rgba(99,102,241,0.4)" : "1px solid rgba(255,255,255,0.08)",
+          color: active ? "#818cf8" : "#64748b",
+          borderRadius: 6, width: 32, height: 32, cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 12, fontWeight: 600,
+        });
+
+        return (
+          <div style={styles.modal}>
+            <div style={styles.modalOverlay} onClick={closeDrillDown} />
+            <div style={{
+              position: "relative", background: "#111827",
+              border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16,
+              maxWidth: 940, width: "92%", maxHeight: "85vh",
+              display: "flex", flexDirection: "column", zIndex: 1,
+            }}>
+              {/* Header */}
+              <div style={{ padding: "24px 28px 18px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexShrink: 0 }}>
+                <div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: "#f1f5f9", display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 12, height: 12, borderRadius: "50%", background: drillDown.color, boxShadow: `0 0 10px ${drillDown.color}66` }} />
+                    {drillDown.label}{drillDown.type === "priority" ? " Priority" : ""} — {activeTab === "feedback" ? "Feedbacks" : "Suggestions"}
+                  </div>
+                  <div style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>{drillDownData.length} records</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <button
+                    onClick={exportDrillCSV}
+                    style={{
+                      background: "transparent", border: "1px solid rgba(52,211,153,0.4)",
+                      borderRadius: 8, color: "#34d399", padding: "7px 16px",
+                      fontSize: 12, fontWeight: 600, cursor: "pointer",
+                      display: "flex", alignItems: "center", gap: 6,
+                    }}
+                  >Export CSV</button>
+                  <button
+                    onClick={closeDrillDown}
+                    style={{
+                      background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)",
+                      color: "#94a3b8", width: 34, height: 34, borderRadius: 8,
+                      cursor: "pointer", fontSize: 16,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}
+                  >✕</button>
+                </div>
+              </div>
+
+              {/* Table */}
+              <div style={{ flex: 1, overflowY: "auto", padding: "0 28px", minHeight: 0 }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead style={{ position: "sticky", top: 0, background: "#111827", zIndex: 1 }}>
+                    <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                      {headers.map(h => (
+                        <th key={h} style={{
+                          padding: "12px 14px", textAlign: "left", color: "#64748b",
+                          fontWeight: 700, fontSize: 11, textTransform: "uppercase",
+                          letterSpacing: 0.8, whiteSpace: "nowrap", background: "#111827",
+                        }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {drillPaginated.map(fb => (
+                      <tr key={fb.id}
+                        style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", transition: "background 0.15s" }}
+                        onMouseOver={e => e.currentTarget.style.background = "rgba(255,255,255,0.03)"}
+                        onMouseOut={e => e.currentTarget.style.background = "transparent"}
+                      >
+                        <td style={{ padding: "14px 14px", fontSize: 13, whiteSpace: "nowrap" }}>
+                          <span
+                            style={{ color: "#38bdf8", fontWeight: 600, fontFamily: "monospace", cursor: "pointer" }}
+                            onClick={() => setViewingChat(fb)}
+                            onMouseOver={e => e.target.style.color = "#7dd3fc"}
+                            onMouseOut={e => e.target.style.color = "#38bdf8"}
+                          >{fb.chatId}</span>
+                        </td>
+                        <td style={{ padding: "14px 14px", color: "#94a3b8", fontSize: 13, whiteSpace: "nowrap" }}>{fb.date}</td>
+                        <td style={{ padding: "14px 14px", fontSize: 13, maxWidth: 280 }}>
+                          <span
+                            style={{ color: "#cbd5e1", cursor: "pointer", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                            onClick={() => setSelectedFeedback(fb)}
+                            onMouseOver={e => e.target.style.color = "#22c55e"}
+                            onMouseOut={e => e.target.style.color = "#cbd5e1"}
+                          >{fb.headline}</span>
+                        </td>
+                        {isCategory ? (
+                          <>
+                            <td style={{ padding: "14px 14px", fontSize: 13 }}>
+                              <span style={{ color: PRIORITY_COLORS[fb.priority]?.text || "#94a3b8" }}>{fb.priority}</span>
+                            </td>
+                            <td style={{ padding: "14px 14px", color: "#94a3b8", fontSize: 13 }}>{fb.product}</td>
+                          </>
+                        ) : (
+                          <>
+                            <td style={{ padding: "14px 14px", color: "#94a3b8", fontSize: 13, whiteSpace: "nowrap" }}>
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                                <span>{CATEGORIES_META[fb.category]?.icon || "📋"}</span>
+                                {fb.category}
+                              </span>
+                            </td>
+                            <td style={{ padding: "14px 14px", fontSize: 13 }}>
+                              {drillDown.type === "priority" ? (
+                                <span style={{ color: "#94a3b8" }}>{fb.product}</span>
+                              ) : (
+                                <span style={{ color: PRIORITY_COLORS[fb.priority]?.text || "#94a3b8" }}>{fb.priority}</span>
+                              )}
+                            </td>
+                          </>
+                        )}
+                        <td style={{ padding: "14px 14px", color: "#94a3b8", fontSize: 13 }}>{fb.status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Footer / Pagination */}
+              <div style={{
+                padding: "14px 28px", borderTop: "1px solid rgba(255,255,255,0.06)",
+                display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0,
+              }}>
+                <div style={{ fontSize: 12, color: "#475569" }}>
+                  Showing {drillStart}–{drillEnd} of {drillDownData.length}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <button style={pgBtnStyle(false)} disabled={drillPage === 1} onClick={() => setDrillPage(1)}>«</button>
+                  <button style={pgBtnStyle(false)} disabled={drillPage === 1} onClick={() => setDrillPage(p => Math.max(1, p - 1))}>‹</button>
+                  <span style={{ fontSize: 12, color: "#94a3b8", padding: "0 8px" }}>{drillPage} / {totalDrillPages}</span>
+                  <button style={pgBtnStyle(false)} disabled={drillPage === totalDrillPages} onClick={() => setDrillPage(p => Math.min(totalDrillPages, p + 1))}>›</button>
+                  <button style={pgBtnStyle(false)} disabled={drillPage === totalDrillPages} onClick={() => setDrillPage(totalDrillPages)}>»</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Add Manual Feedback/Suggestion Modal */}
+      {showAddModal && (
+        <div style={{ ...styles.modal, zIndex: 1100 }}>
+          <div style={styles.modalOverlay} onClick={() => setShowAddModal(false)} />
+          <div style={{
+            position: "relative", background: "#111827",
+            border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16,
+            maxWidth: 540, width: "92%", padding: "28px 30px",
+            zIndex: 1,
+          }}>
+            <button style={styles.closeBtn} onClick={() => setShowAddModal(false)}>✕</button>
+
+            <div style={{ marginBottom: 22 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: 8,
+                  background: "linear-gradient(135deg, rgba(99,102,241,0.25), rgba(139,92,246,0.25))",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  color: "#a5b4fc",
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                </div>
+                <span style={{ fontSize: 17, fontWeight: 700, color: "#f1f5f9" }}>
+                  New {activeTab === "feedback" ? "Feedback" : "Suggestion"}
+                </span>
+              </div>
+              <div style={{ fontSize: 12, color: "#64748b", marginLeft: 42 }}>
+                AI will auto-generate the headline and category from your text
+              </div>
+            </div>
+
+            {/* Feedback text */}
+            <div style={{ marginBottom: 18 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>
+                {activeTab === "feedback" ? "Feedback" : "Suggestion"} <span style={{ color: "#f87171" }}>*</span>
+              </label>
+              <textarea
+                value={newText}
+                onChange={e => setNewText(e.target.value)}
+                placeholder={`Describe the ${activeTab === "feedback" ? "feedback" : "suggestion"} in detail...`}
+                rows={5}
+                style={{
+                  width: "100%",
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 10,
+                  color: "#e2e8f0",
+                  padding: "12px 14px",
+                  fontSize: 13,
+                  outline: "none",
+                  resize: "vertical",
+                  fontFamily: "inherit",
+                  lineHeight: 1.5,
+                  boxSizing: "border-box",
+                }}
+                onFocus={e => e.target.style.borderColor = "rgba(99,102,241,0.4)"}
+                onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.08)"}
+              />
+              <div style={{ fontSize: 11, color: "#475569", marginTop: 6, textAlign: "right" }}>
+                {newText.length} characters
+              </div>
+            </div>
+
+            {/* Product + Priority */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 24 }}>
+              <div>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>
+                  Product Type
+                </label>
+                <select
+                  value={newProduct}
+                  onChange={e => setNewProduct(e.target.value)}
+                  style={{
+                    width: "100%",
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    borderRadius: 10,
+                    color: "#e2e8f0",
+                    padding: "10px 14px",
+                    fontSize: 13,
+                    outline: "none",
+                    cursor: "pointer",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  <option value="CFD">CFD</option>
+                  <option value="Futures">Futures</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>
+                  Priority
+                </label>
+                <select
+                  value={newPriority}
+                  onChange={e => setNewPriority(e.target.value)}
+                  style={{
+                    width: "100%",
+                    background: PRIORITY_COLORS[newPriority].bg,
+                    border: `1px solid ${PRIORITY_COLORS[newPriority].text}33`,
+                    borderRadius: 10,
+                    color: PRIORITY_COLORS[newPriority].text,
+                    padding: "10px 14px",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    outline: "none",
+                    cursor: "pointer",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  <option value="High" style={{ background: "#111827", color: "#FF2E97" }}>High</option>
+                  <option value="Medium" style={{ background: "#111827", color: "#A855F7" }}>Medium</option>
+                  <option value="Low" style={{ background: "#111827", color: "#00F0FF" }}>Low</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <button
+                onClick={() => setShowAddModal(false)}
+                style={{
+                  background: "transparent",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  color: "#94a3b8",
+                  borderRadius: 8,
+                  padding: "10px 22px",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  cursor: "pointer",
+                }}
+              >Cancel</button>
+              <button
+                onClick={submitManualEntry}
+                disabled={newText.trim().length < 10}
+                style={{
+                  background: newText.trim().length < 10 ? "rgba(99,102,241,0.3)" : "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                  border: "none",
+                  color: "#fff",
+                  borderRadius: 8,
+                  padding: "10px 26px",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: newText.trim().length < 10 ? "not-allowed" : "pointer",
+                  boxShadow: newText.trim().length < 10 ? "none" : "0 4px 14px rgba(99,102,241,0.35)",
+                  opacity: newText.trim().length < 10 ? 0.6 : 1,
+                }}
+              >Submit</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast notification */}
+      {toast && (
+        <div style={{
+          position: "fixed",
+          bottom: 24,
+          right: 24,
+          zIndex: 2000,
+          background: toast.type === "error" ? "rgba(239,68,68,0.95)" : "rgba(30,41,59,0.98)",
+          border: `1px solid ${toast.type === "error" ? "rgba(239,68,68,0.5)" : "rgba(34,197,94,0.3)"}`,
+          borderLeft: `3px solid ${toast.type === "error" ? "#ef4444" : "#22c55e"}`,
+          borderRadius: 10,
+          padding: "12px 18px",
+          color: "#f1f5f9",
+          fontSize: 13,
+          fontWeight: 500,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+          maxWidth: 380,
+          animation: "slideIn 0.25s ease-out",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 15 }}>{toast.type === "error" ? "⚠️" : "✓"}</span>
+            <span>{toast.message}</span>
           </div>
         </div>
       )}

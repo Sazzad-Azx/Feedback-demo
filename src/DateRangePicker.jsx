@@ -215,37 +215,61 @@ export default function DateRangePicker({ dateFrom, dateTo, onApply }) {
 
   return (
     <div ref={ref} style={{ position: "relative" }}>
-      {/* Trigger Button */}
-      <button
+      {/* Trigger Button — matches PillDropdown design */}
+      <div
         onClick={() => setOpen(!open)}
         style={{
-          background: "linear-gradient(135deg, #6366f1, #4f46e5)",
-          border: "none",
-          borderRadius: 10,
-          color: "#fff",
-          padding: "8px 18px",
-          fontSize: 13,
-          fontWeight: 600,
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 10,
+          background: "rgba(10,15,25,0.85)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          borderRadius: 30,
+          height: 44,
+          padding: "4px 6px 4px 16px",
+          minWidth: 170,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
           cursor: "pointer",
+          userSelect: "none",
+        }}
+      >
+        {/* Calendar icon */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: 15, flexShrink: 0 }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+        </div>
+        {/* Inner pill with text + arrow */}
+        <div style={{
           display: "flex",
           alignItems: "center",
-          gap: 8,
-          transition: "opacity 0.15s, transform 0.1s",
-          boxShadow: "0 2px 8px rgba(99,102,241,0.25)",
-        }}
-        onMouseOver={e => e.currentTarget.style.opacity = "0.9"}
-        onMouseOut={e => e.currentTarget.style.opacity = "1"}
-      >
-        {buttonLabel}
-        <span style={{ fontSize: 10, transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▲</span>
-      </button>
+          justifyContent: "space-between",
+          flex: 1,
+          height: "100%",
+          background: "rgba(30,41,59,0.75)",
+          border: "1px solid rgba(255,255,255,0.05)",
+          borderRadius: 24,
+          padding: "0 14px",
+          gap: 10,
+        }}>
+          <span style={{ fontSize: 13, fontWeight: 500, color: "#cbd5e1", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {buttonLabel}
+          </span>
+          <svg width="8" height="8" viewBox="0 0 10 10" style={{ transition: "transform 0.2s", transform: open ? "rotate(180deg)" : "rotate(0deg)", flexShrink: 0 }}>
+            <path fill="#94a3b8" d="M1 3.5l4 4 4-4z" />
+          </svg>
+        </div>
+      </div>
 
       {/* Dropdown */}
       {open && (
         <div style={{
           position: "absolute",
           top: "calc(100% + 8px)",
-          right: 0,
+          left: 0,
           zIndex: 999,
           background: "#111827",
           border: "1px solid rgba(255,255,255,0.08)",
