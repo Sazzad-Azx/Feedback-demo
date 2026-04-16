@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import DateRangePicker from "./DateRangePicker";
+import AthenaIcon from "./AthenaIcon";
 
 // ─── Custom Dropdown Component ───────────────────────────────────
-function PillDropdown({ icon, label, value, options, onChange, searchable = true }) {
+function PillDropdown({ icon, label, value, options, onChange, searchable = true, multi = false }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const rootRef = useRef(null);
@@ -20,11 +21,20 @@ function PillDropdown({ icon, label, value, options, onChange, searchable = true
     if (!open) setSearch("");
   }, [open, searchable]);
 
-  const selected = options.find(o => o.value === value);
-  const displayText = selected ? selected.label : label;
+  // Multi-select: value is an array; single-select: value is a string
+  const displayText = multi
+    ? (value.length === 0 || value.length === options.length ? label : `${value.length} selected`)
+    : (options.find(o => o.value === value)?.label || label);
+
   const filtered = searchable
     ? options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()))
     : options;
+
+  const handleMultiToggle = (val) => {
+    const isSelected = value.includes(val);
+    const next = isSelected ? value.filter(v => v !== val) : [...value, val];
+    onChange(next);
+  };
 
   return (
     <div ref={rootRef} style={{ position: "relative" }}>
@@ -108,7 +118,45 @@ function PillDropdown({ icon, label, value, options, onChange, searchable = true
           <div style={{ maxHeight: 260, overflowY: "auto" }}>
             {filtered.length === 0 ? (
               <div style={{ padding: "10px 12px", fontSize: 12, color: "#475569", textAlign: "center" }}>No matches</div>
-            ) : filtered.map(o => {
+            ) : multi ? filtered.map(o => {
+              const isChecked = value.includes(o.value);
+              return (
+                <div
+                  key={o.value}
+                  onClick={() => handleMultiToggle(o.value)}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: 6,
+                    cursor: "pointer",
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: isChecked ? "#e2e8f0" : "#cbd5e1",
+                    background: isChecked ? "rgba(56,189,248,0.06)" : "transparent",
+                    transition: "background 0.12s",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                  }}
+                  onMouseOver={e => e.currentTarget.style.background = isChecked ? "rgba(56,189,248,0.1)" : "rgba(255,255,255,0.04)"}
+                  onMouseOut={e => e.currentTarget.style.background = isChecked ? "rgba(56,189,248,0.06)" : "transparent"}
+                >
+                  <div style={{
+                    width: 16, height: 16, borderRadius: 4, flexShrink: 0,
+                    border: isChecked ? "1.5px solid #38bdf8" : "1.5px solid rgba(255,255,255,0.15)",
+                    background: isChecked ? "rgba(56,189,248,0.15)" : "transparent",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "all 0.15s",
+                  }}>
+                    {isChecked && (
+                      <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                        <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </div>
+                  {o.label}
+                </div>
+              );
+            }) : filtered.map(o => {
               const isSelected = o.value === value;
               return (
                 <div
@@ -561,7 +609,7 @@ export default function FeedbackAndSuggestion() {
   const [feedbackData, setFeedbackData] = useState(MOCK_FEEDBACK);
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [viewingChat, setViewingChat] = useState(null);
-  const [filterCategory, setFilterCategory] = useState("All");
+  const [filterCategory, setFilterCategory] = useState([]);
   const [filterPriority, setFilterPriority] = useState("All");
   const [filterProduct, setFilterProduct] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -582,8 +630,45 @@ export default function FeedbackAndSuggestion() {
   const [newProduct, setNewProduct] = useState("CFD");
   const [newPriority, setNewPriority] = useState("Medium");
   const [toast, setToast] = useState(null);
-  const openDrillDown = (data) => { setDrillDown(data); setDrillPage(1); };
+  const [drillView, setDrillView] = useState("records"); // "records" | "athena"
+  const [athenaMessages, setAthenaMessages] = useState([]);
+  const [athenaInput, setAthenaInput] = useState("");
+  const [athenaThinking, setAthenaThinking] = useState(false);
+  const athenaScrollRef = useRef(null);
+
+  const openDrillDown = (data) => {
+    setDrillDown(data);
+    setDrillPage(1);
+    setDrillView("records");
+    setAthenaMessages([]);
+    setAthenaInput("");
+  };
   const closeDrillDown = () => setDrillDown(null);
+
+  const sendAthenaMessage = (text) => {
+    const msg = (text ?? athenaInput).trim();
+    if (!msg) return;
+    setAthenaMessages(prev => [...prev, { role: "user", content: msg, time: Date.now() }]);
+    setAthenaInput("");
+    setAthenaThinking(true);
+    setTimeout(() => {
+      const contextLabel = drillDown?.label || "this segment";
+      const placeholderResponses = [
+        `I'm analyzing ${drillDownData.length} ${activeTab === "feedback" ? "feedback entries" : "suggestions"} related to "${contextLabel}". The backend integration is being finalized — once connected, I'll deep-dive into conversations and surface patterns, sentiment trends, and actionable insights for your query.`,
+        `Based on the ${drillDownData.length} records in this view, I'll be able to identify recurring topics, extract customer pain points, and recommend priorities. My full conversational analysis engine will be available shortly.`,
+        `Great question. Once my connection to the conversation store is live, I'll pull the most relevant chats, summarize them, and highlight key takeaways specific to "${contextLabel}". Stay tuned.`,
+      ];
+      const response = placeholderResponses[Math.floor(Math.random() * placeholderResponses.length)];
+      setAthenaMessages(prev => [...prev, { role: "athena", content: response, time: Date.now() }]);
+      setAthenaThinking(false);
+    }, 1200);
+  };
+
+  useEffect(() => {
+    if (drillView === "athena" && athenaScrollRef.current) {
+      athenaScrollRef.current.scrollTop = athenaScrollRef.current.scrollHeight;
+    }
+  }, [athenaMessages, athenaThinking, drillView]);
 
   // ─── AI-simulated classification & headline generation ──
   const classifyCategory = (text) => {
@@ -659,7 +744,7 @@ export default function FeedbackAndSuggestion() {
 
   const filtered = useMemo(() => {
     let d = allData.filter(f => f.type === activeTab);
-    if (filterCategory !== "All") d = d.filter(f => f.category === filterCategory);
+    if (filterCategory.length > 0) d = d.filter(f => filterCategory.includes(f.category));
     if (filterPriority !== "All") d = d.filter(f => f.priority === filterPriority);
     if (filterProduct !== "All") d = d.filter(f => f.product === filterProduct);
     if (searchQuery.trim()) d = d.filter(f => f.headline.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -902,11 +987,9 @@ export default function FeedbackAndSuggestion() {
             }
             label="All Categories"
             value={filterCategory}
-            onChange={v => { setFilterCategory(v); setCurrentPage(1); }}
-            options={[
-              { value: "All", label: "All Categories" },
-              ...Object.keys(CATEGORIES_META).map(c => ({ value: c, label: c })),
-            ]}
+            onChange={v => { setFilterCategory(v); }}
+            multi
+            options={Object.keys(CATEGORIES_META).map(c => ({ value: c, label: c }))}
           />
           <PillDropdown
             icon={
@@ -961,8 +1044,8 @@ export default function FeedbackAndSuggestion() {
 
         {/* Top Feedback Areas (left) + Total Feedback (right) */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 480px", gap: 20, marginBottom: 24, alignItems: "stretch" }}>
-          {/* Total Feedback + Product Type Card */}
-          <div style={{ ...styles.card, order: 2, display: "flex", flexDirection: "column" }}>
+          {/* Total Feedback + Product Type — two separate cards */}
+          <div style={{ order: 2, display: "flex", flexDirection: "column", gap: 20 }}>
             {(() => {
               const toRad = (deg) => (deg * Math.PI) / 180;
               const size = 130;
@@ -1072,13 +1155,6 @@ export default function FeedbackAndSuggestion() {
               ];
               const product = buildSlices(productSegments);
 
-              const sectionStyle = {
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-              };
-
               const titleStyle = {
                 padding: "14px 18px 0",
                 fontSize: 13,
@@ -1102,8 +1178,8 @@ export default function FeedbackAndSuggestion() {
 
               return (
                 <>
-                  {/* Priority Breakdown */}
-                  <div style={sectionStyle}>
+                  {/* Total Feedback Card */}
+                  <div style={{ ...styles.card, display: "flex", flexDirection: "column" }}>
                     <div style={titleStyle}>
                       <span>📋</span> Total {activeTab === "feedback" ? "Feedback" : "Suggestions"}
                     </div>
@@ -1113,11 +1189,8 @@ export default function FeedbackAndSuggestion() {
                     </div>
                   </div>
 
-                  {/* Divider */}
-                  <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "0 18px", flexShrink: 0 }} />
-
-                  {/* Product Breakdown */}
-                  <div style={sectionStyle}>
+                  {/* Product Type Card */}
+                  <div style={{ ...styles.card, display: "flex", flexDirection: "column" }}>
                     <div style={titleStyle}>
                       <span>📦</span> Product Type
                     </div>
@@ -1224,7 +1297,7 @@ export default function FeedbackAndSuggestion() {
             <div style={styles.cardHeader}>
               <div style={styles.cardTitle}>
                 <span style={styles.cardTitleIcon}>📋</span>
-                {activeTab === "feedback" ? "Feedback" : "Suggestions"}
+                {activeTab === "feedback" ? "Ungrouped Feedback" : "Ungrouped Suggestions"}
                 <span style={{ fontSize: 12, color: "#475569", fontWeight: 400, marginLeft: 8 }}>{filtered.length} results</span>
               </div>
               <button
@@ -1264,22 +1337,22 @@ export default function FeedbackAndSuggestion() {
                 <span style={{ fontSize: 14 }}>⬇</span> Download CSV
               </button>
             </div>
-            <div style={{ overflowX: "auto" }}>
-              <table style={styles.table}>
-                <thead>
+            <div style={{ overflowX: "auto", maxHeight: 520, overflowY: "auto" }}>
+              <table style={{ ...styles.table, borderCollapse: "separate", borderSpacing: 0 }}>
+                <thead style={{ position: "sticky", top: 0, zIndex: 2 }}>
                   <tr>
-                    <th style={{ ...styles.th, cursor: "pointer" }} onClick={() => handleSort("date")}>Date <SortArrow field="date" /></th>
-                    <th style={styles.th}>Feedback Headline</th>
-                    <th style={styles.th}>Chat ID</th>
-                    <th style={styles.th}>Category</th>
-                    <th style={styles.th}>Product</th>
-                    <th style={{ ...styles.th, cursor: "pointer" }} onClick={() => handleSort("priority")}>Priority <SortArrow field="priority" /></th>
+                    <th style={{ ...styles.th, cursor: "pointer", background: "#0b0f14" }} onClick={() => handleSort("date")}>Date <SortArrow field="date" /></th>
+                    <th style={{ ...styles.th, background: "#0b0f14" }}>Feedback Headline</th>
+                    <th style={{ ...styles.th, background: "#0b0f14" }}>Chat ID</th>
+                    <th style={{ ...styles.th, background: "#0b0f14" }}>Category</th>
+                    <th style={{ ...styles.th, background: "#0b0f14" }}>Product</th>
+                    <th style={{ ...styles.th, cursor: "pointer", background: "#0b0f14" }} onClick={() => handleSort("priority")}>Priority <SortArrow field="priority" /></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {paginated.length === 0 ? (
+                  {filtered.length === 0 ? (
                     <tr><td colSpan={6} style={styles.emptyState}>No feedback found matching your filters.</td></tr>
-                  ) : paginated.map((fb, i) => (
+                  ) : filtered.map((fb, i) => (
                     <tr
                       key={fb.id}
                       style={{ ...styles.trHover, background: hoveredRow === i ? "rgba(255,255,255,0.02)" : "transparent" }}
@@ -1354,9 +1427,6 @@ export default function FeedbackAndSuggestion() {
                             <option value="Medium">Medium</option>
                             <option value="Low">Low</option>
                           </select>
-                          {fb.manualPriority && (
-                            <span title="Manually set — AI will not override" style={{ fontSize: 10, color: "#64748b", fontStyle: "italic", whiteSpace: "nowrap" }}>✋ Manual</span>
-                          )}
                         </div>
                       </td>
                     </tr>
@@ -1364,20 +1434,9 @@ export default function FeedbackAndSuggestion() {
                 </tbody>
               </table>
             </div>
-            {totalPages > 1 && (
-              <div style={styles.pagination}>
-                <span style={{ fontSize: 12, color: "#475569" }}>
-                  Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} of {filtered.length}
-                </span>
-                <div style={{ display: "flex", gap: 6 }}>
-                  <button style={styles.pageBtn(false)} onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>← Prev</button>
-                  {Array.from({ length: totalPages }, (_, i) => (
-                    <button key={i} style={styles.pageBtn(currentPage === i + 1)} onClick={() => setCurrentPage(i + 1)}>{i + 1}</button>
-                  ))}
-                  <button style={styles.pageBtn(false)} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next →</button>
-                </div>
-              </div>
-            )}
+            <div style={{ padding: "10px 18px", fontSize: 12, color: "#475569" }}>
+              Showing {filtered.length} of {filtered.length}
+            </div>
           </div>
         </div>
 
@@ -1387,7 +1446,7 @@ export default function FeedbackAndSuggestion() {
             <div style={styles.cardHeader}>
               <div style={styles.cardTitle}>
                 <span style={styles.cardTitleIcon}>🔁</span>
-                Feedback Area
+                {activeTab === "feedback" ? "Feedback Area" : "Suggestion Area"}
                 <span style={{ fontSize: 12, color: "#475569", fontWeight: 400, marginLeft: 8 }}>
                   {commonThemes.length} recurring {commonThemes.length === 1 ? "pattern" : "patterns"} detected
                 </span>
@@ -1398,7 +1457,7 @@ export default function FeedbackAndSuggestion() {
                 <thead>
                   <tr>
                     <th style={{ ...styles.th, width: 40 }}>#</th>
-                    <th style={styles.th}>Feedback Area</th>
+                    <th style={styles.th}>{activeTab === "feedback" ? "Feedback Area" : "Suggestion Area"}</th>
                     <th style={{ ...styles.th, width: 90, textAlign: "center" }}>Count</th>
                     <th style={styles.th}>Category</th>
                     <th style={{ ...styles.th, width: 110 }}>Product</th>
@@ -1437,7 +1496,7 @@ export default function FeedbackAndSuggestion() {
                         onMouseOver={e => { if (!isExpanded) e.currentTarget.style.background = "rgba(255,255,255,0.02)"; }}
                         onMouseOut={e => { if (!isExpanded) e.currentTarget.style.background = "transparent"; }}
                       >
-                        <td style={{ ...styles.td, textAlign: "center", fontWeight: 700, fontSize: 14, color: i < 3 ? barColor : "#64748b" }}>
+                        <td style={{ ...styles.td, textAlign: "center", fontWeight: 700, fontSize: 14, color: "#94a3b8" }}>
                           {i + 1}
                         </td>
                         <td style={{ ...styles.td, fontWeight: 500, color: "#e2e8f0" }}>
@@ -1449,8 +1508,8 @@ export default function FeedbackAndSuggestion() {
                         <td style={{ ...styles.td, textAlign: "center" }}>
                           <span style={{
                             display: "inline-block",
-                            background: `${barColor}22`,
-                            color: barColor,
+                            background: "rgba(226,232,240,0.08)",
+                            color: "#e2e8f0",
                             fontWeight: 700,
                             fontSize: 14,
                             padding: "4px 14px",
@@ -1517,40 +1576,37 @@ export default function FeedbackAndSuggestion() {
                             onMouseOver={e => Array.from(e.currentTarget.children).forEach(td => td.style.background = "rgba(255,255,255,0.02)")}
                             onMouseOut={e => Array.from(e.currentTarget.children).forEach(td => td.style.background = "rgba(0,0,0,0.2)")}
                           >
-                            {/* Column 1: left border indicator in place of # */}
+                            {/* Column 1 (#): Date + left border indicator */}
                             <td style={{ ...childTdBase, padding: 0, position: "relative" }}>
                               <div style={{ position: "absolute", left: 20, top: 0, bottom: 0, width: 2, background: barColor }} />
+                              <span style={{ fontSize: 11, color: "#64748b", fontFamily: "monospace", whiteSpace: "nowrap", paddingLeft: 32 }}>
+                                {item.date}
+                              </span>
                             </td>
 
-                            {/* Column 2: Date · Chat ID · Headline (spans into Feedback Area column) */}
+                            {/* Column 2 (Feedback Area): Headline */}
                             <td style={{ ...childTdBase, color: "#e2e8f0" }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                <span style={{ fontSize: 11, color: "#64748b", fontFamily: "monospace", whiteSpace: "nowrap" }}>
-                                  {item.date}
-                                </span>
-                                <span style={{ color: "#334155", fontSize: 10 }}>·</span>
-                                <span
-                                  style={{ flex: 1, fontSize: 13, color: "#e2e8f0", fontWeight: 500, cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}
-                                  onClick={() => setSelectedFeedback(item)}
-                                  onMouseOver={e => e.target.style.color = "#22c55e"}
-                                  onMouseOut={e => e.target.style.color = "#e2e8f0"}
-                                >
-                                  {item.headline}
-                                </span>
-                                <span style={{ color: "#334155", fontSize: 10 }}>·</span>
-                                <span
-                                  style={{ fontSize: 11, color: "#38bdf8", fontWeight: 600, fontFamily: "monospace", cursor: "pointer", whiteSpace: "nowrap" }}
-                                  onClick={() => setViewingChat(item)}
-                                  onMouseOver={e => e.target.style.color = "#7dd3fc"}
-                                  onMouseOut={e => e.target.style.color = "#38bdf8"}
-                                >
-                                  {item.chatId}
-                                </span>
-                              </div>
+                              <span
+                                style={{ fontSize: 13, color: "#e2e8f0", fontWeight: 500, cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block", minWidth: 0 }}
+                                onClick={() => setSelectedFeedback(item)}
+                                onMouseOver={e => e.target.style.color = "#22c55e"}
+                                onMouseOut={e => e.target.style.color = "#e2e8f0"}
+                              >
+                                {item.headline}
+                              </span>
                             </td>
 
-                            {/* Column 3: Count (empty) */}
-                            <td style={childTdBase}></td>
+                            {/* Column 3 (Count): Chat ID */}
+                            <td style={{ ...childTdBase, textAlign: "center" }}>
+                              <span
+                                style={{ fontSize: 11, color: "#38bdf8", fontWeight: 600, fontFamily: "monospace", cursor: "pointer", whiteSpace: "nowrap" }}
+                                onClick={() => setViewingChat(item)}
+                                onMouseOver={e => e.target.style.color = "#7dd3fc"}
+                                onMouseOut={e => e.target.style.color = "#38bdf8"}
+                              >
+                                {item.chatId}
+                              </span>
+                            </td>
 
                             {/* Column 4: Category (empty) */}
                             <td style={childTdBase}></td>
@@ -1569,26 +1625,42 @@ export default function FeedbackAndSuggestion() {
                               }}>{item.product}</span>
                             </td>
 
-                            {/* Column 6: Priority — aligned with parent */}
+                            {/* Column 6: Priority — changeable dropdown */}
                             <td style={childTdBase}>
-                              <span style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 5,
-                                padding: "3px 10px",
-                                borderRadius: 20,
-                                fontSize: 11,
-                                fontWeight: 600,
-                                background: PRIORITY_COLORS[item.priority].bg,
-                                color: PRIORITY_COLORS[item.priority].text,
-                                whiteSpace: "nowrap",
-                              }}>
-                                <span style={{
-                                  width: 5, height: 5, borderRadius: "50%",
-                                  background: PRIORITY_COLORS[item.priority].dot,
-                                }} />
-                                {item.priority}
-                              </span>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <select
+                                  value={item.priority}
+                                  onClick={e => e.stopPropagation()}
+                                  onChange={e => {
+                                    const newPriority = e.target.value;
+                                    setFeedbackData(prev => prev.map(fb =>
+                                      fb.id === item.id ? { ...fb, priority: newPriority, manualPriority: true } : fb
+                                    ));
+                                  }}
+                                  style={{
+                                    background: PRIORITY_COLORS[item.priority].bg,
+                                    color: PRIORITY_COLORS[item.priority].text,
+                                    border: `1px solid ${PRIORITY_COLORS[item.priority].text}33`,
+                                    borderRadius: 20,
+                                    padding: "3px 10px",
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    cursor: "pointer",
+                                    outline: "none",
+                                    appearance: "none",
+                                    WebkitAppearance: "none",
+                                    MozAppearance: "none",
+                                    paddingRight: 20,
+                                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748b' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`,
+                                    backgroundRepeat: "no-repeat",
+                                    backgroundPosition: "right 6px center",
+                                  }}
+                                >
+                                  <option value="High">High</option>
+                                  <option value="Medium">Medium</option>
+                                  <option value="Low">Low</option>
+                                </select>
+                              </div>
                             </td>
                           </tr>
                         );
@@ -1774,15 +1846,17 @@ export default function FeedbackAndSuggestion() {
                   <div style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>{drillDownData.length} records</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <button
-                    onClick={exportDrillCSV}
-                    style={{
-                      background: "transparent", border: "1px solid rgba(52,211,153,0.4)",
-                      borderRadius: 8, color: "#34d399", padding: "7px 16px",
-                      fontSize: 12, fontWeight: 600, cursor: "pointer",
-                      display: "flex", alignItems: "center", gap: 6,
-                    }}
-                  >Export CSV</button>
+                  {drillView === "records" && (
+                    <button
+                      onClick={exportDrillCSV}
+                      style={{
+                        background: "transparent", border: "1px solid rgba(52,211,153,0.4)",
+                        borderRadius: 8, color: "#34d399", padding: "7px 16px",
+                        fontSize: 12, fontWeight: 600, cursor: "pointer",
+                        display: "flex", alignItems: "center", gap: 6,
+                      }}
+                    >Export CSV</button>
+                  )}
                   <button
                     onClick={closeDrillDown}
                     style={{
@@ -1795,7 +1869,69 @@ export default function FeedbackAndSuggestion() {
                 </div>
               </div>
 
-              {/* Table */}
+              {/* View Switcher — Records vs Ask Athena */}
+              <div style={{ padding: "0 28px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0, display: "flex", gap: 4 }}>
+                <button
+                  onClick={() => setDrillView("records")}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: drillView === "records" ? "#f1f5f9" : "#64748b",
+                    padding: "12px 16px",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    borderBottom: drillView === "records" ? "2px solid #818cf8" : "2px solid transparent",
+                    transition: "color 0.15s, border-color 0.15s",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="8" y1="6" x2="21" y2="6" />
+                    <line x1="8" y1="12" x2="21" y2="12" />
+                    <line x1="8" y1="18" x2="21" y2="18" />
+                    <line x1="3" y1="6" x2="3.01" y2="6" />
+                    <line x1="3" y1="12" x2="3.01" y2="12" />
+                    <line x1="3" y1="18" x2="3.01" y2="18" />
+                  </svg>
+                  Records
+                  <span style={{ fontSize: 11, background: "rgba(255,255,255,0.06)", padding: "2px 7px", borderRadius: 6, color: "#94a3b8" }}>
+                    {drillDownData.length}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setDrillView("athena")}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: drillView === "athena" ? "#f1f5f9" : "#64748b",
+                    padding: "12px 16px",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    borderBottom: drillView === "athena" ? "2px solid #BF5FFF" : "2px solid transparent",
+                    transition: "color 0.15s, border-color 0.15s",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <AthenaIcon size={32} />
+                  Ask Athena
+                  <span style={{
+                    fontSize: 10, fontWeight: 700,
+                    background: "linear-gradient(90deg, #00E5FF, #BF5FFF, #FF3CAC)",
+                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                    backgroundClip: "text", color: "transparent",
+                    letterSpacing: 0.5,
+                  }}>AI</span>
+                </button>
+              </div>
+
+              {/* Records View — Table */}
+              {drillView === "records" && (
               <div style={{ flex: 1, overflowY: "auto", padding: "0 28px", minHeight: 0 }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead style={{ position: "sticky", top: 0, background: "#111827", zIndex: 1 }}>
@@ -1863,8 +1999,10 @@ export default function FeedbackAndSuggestion() {
                   </tbody>
                 </table>
               </div>
+              )}
 
-              {/* Footer / Pagination */}
+              {/* Records footer / Pagination */}
+              {drillView === "records" && (
               <div style={{
                 padding: "14px 28px", borderTop: "1px solid rgba(255,255,255,0.06)",
                 display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0,
@@ -1880,6 +2018,205 @@ export default function FeedbackAndSuggestion() {
                   <button style={pgBtnStyle(false)} disabled={drillPage === totalDrillPages} onClick={() => setDrillPage(totalDrillPages)}>»</button>
                 </div>
               </div>
+              )}
+
+              {/* Athena Chat View */}
+              {drillView === "athena" && (
+                <>
+                  <div
+                    ref={athenaScrollRef}
+                    style={{
+                      flex: 1,
+                      overflowY: "auto",
+                      padding: "24px 28px",
+                      minHeight: 0,
+                      background: "radial-gradient(ellipse at top, rgba(123,47,255,0.05) 0%, transparent 60%)",
+                    }}
+                  >
+                    {/* Welcome state */}
+                    {athenaMessages.length === 0 && (
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "20px 0" }}>
+                        <div style={{ marginBottom: 16, filter: "drop-shadow(0 0 20px rgba(123,47,255,0.5))" }}>
+                          <AthenaIcon size={80} />
+                        </div>
+                        <div style={{
+                          fontSize: 20, fontWeight: 700, marginBottom: 6,
+                          background: "linear-gradient(90deg, #00E5FF, #BF5FFF, #FF3CAC)",
+                          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                          backgroundClip: "text", color: "transparent",
+                        }}>
+                          Hi, I'm Athena
+                        </div>
+                        <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 4, maxWidth: 520 }}>
+                          Deep-diving into <strong style={{ color: "#cbd5e1" }}>{drillDownData.length}</strong> {activeTab === "feedback" ? "feedback entries" : "suggestions"} related to
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+                          <div style={{ width: 8, height: 8, borderRadius: "50%", background: drillDown.color, boxShadow: `0 0 8px ${drillDown.color}` }} />
+                          <span style={{ fontSize: 14, fontWeight: 600, color: drillDown.color }}>{drillDown.label}</span>
+                        </div>
+
+                        {/* Suggested prompts */}
+                        <div style={{ fontSize: 11, fontWeight: 600, color: "#475569", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 10 }}>Try asking</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%", maxWidth: 520 }}>
+                          {[
+                            "What are the most common pain points here?",
+                            "What's the overall sentiment in this group?",
+                            "Which feedback should we prioritize first?",
+                            "Are there recurring patterns in the customer language?",
+                          ].map(q => (
+                            <button
+                              key={q}
+                              onClick={() => sendAthenaMessage(q)}
+                              style={{
+                                background: "rgba(255,255,255,0.03)",
+                                border: "1px solid rgba(255,255,255,0.06)",
+                                borderRadius: 10,
+                                color: "#cbd5e1",
+                                padding: "10px 14px",
+                                fontSize: 13,
+                                fontWeight: 500,
+                                cursor: "pointer",
+                                textAlign: "left",
+                                transition: "all 0.15s",
+                              }}
+                              onMouseOver={e => {
+                                e.currentTarget.style.borderColor = "rgba(191,95,255,0.4)";
+                                e.currentTarget.style.background = "rgba(191,95,255,0.06)";
+                                e.currentTarget.style.color = "#f1f5f9";
+                              }}
+                              onMouseOut={e => {
+                                e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)";
+                                e.currentTarget.style.background = "rgba(255,255,255,0.03)";
+                                e.currentTarget.style.color = "#cbd5e1";
+                              }}
+                            >
+                              <span style={{ color: "#64748b", marginRight: 6 }}>→</span> {q}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Chat messages */}
+                    {athenaMessages.length > 0 && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                        {athenaMessages.map((m, i) => (
+                          <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
+                            {m.role === "athena" && (
+                              <div style={{ flexShrink: 0, marginTop: 2 }}>
+                                <AthenaIcon size={28} />
+                              </div>
+                            )}
+                            <div style={{
+                              maxWidth: "78%",
+                              padding: "10px 14px",
+                              borderRadius: 14,
+                              fontSize: 13,
+                              lineHeight: 1.5,
+                              background: m.role === "user" ? "linear-gradient(135deg, #6366f1, #8b5cf6)" : "rgba(255,255,255,0.04)",
+                              color: m.role === "user" ? "#fff" : "#e2e8f0",
+                              border: m.role === "athena" ? "1px solid rgba(191,95,255,0.15)" : "none",
+                              boxShadow: m.role === "user" ? "0 2px 8px rgba(99,102,241,0.3)" : "none",
+                            }}>
+                              {m.content}
+                            </div>
+                          </div>
+                        ))}
+                        {athenaThinking && (
+                          <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                            <div style={{ flexShrink: 0, marginTop: 2 }}>
+                              <AthenaIcon size={28} />
+                            </div>
+                            <div style={{
+                              padding: "12px 16px",
+                              borderRadius: 14,
+                              background: "rgba(255,255,255,0.04)",
+                              border: "1px solid rgba(191,95,255,0.15)",
+                              display: "flex",
+                              gap: 4,
+                              alignItems: "center",
+                            }}>
+                              {[0, 1, 2].map(i => (
+                                <span key={i} style={{
+                                  width: 6, height: 6, borderRadius: "50%",
+                                  background: "#BF5FFF",
+                                  animation: `athenaPulse 1.4s ease-in-out ${i * 0.2}s infinite`,
+                                }} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Input bar */}
+                  <div style={{
+                    padding: "14px 28px 18px",
+                    borderTop: "1px solid rgba(255,255,255,0.06)",
+                    flexShrink: 0,
+                    background: "rgba(10,15,25,0.4)",
+                  }}>
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      borderRadius: 24,
+                      padding: "6px 6px 6px 18px",
+                      transition: "border-color 0.15s",
+                    }}>
+                      <input
+                        type="text"
+                        value={athenaInput}
+                        onChange={e => setAthenaInput(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter" && !athenaThinking) sendAthenaMessage(); }}
+                        placeholder="Ask Athena about this segment..."
+                        style={{
+                          flex: 1,
+                          background: "transparent",
+                          border: "none",
+                          color: "#e2e8f0",
+                          fontSize: 13,
+                          outline: "none",
+                          padding: "8px 0",
+                          fontFamily: "inherit",
+                        }}
+                      />
+                      <button
+                        onClick={() => sendAthenaMessage()}
+                        disabled={!athenaInput.trim() || athenaThinking}
+                        style={{
+                          background: (!athenaInput.trim() || athenaThinking)
+                            ? "rgba(255,255,255,0.05)"
+                            : "linear-gradient(135deg, #7B2FFF, #BF5FFF, #FF3CAC)",
+                          border: "none",
+                          color: "#fff",
+                          width: 34,
+                          height: 34,
+                          borderRadius: "50%",
+                          cursor: (!athenaInput.trim() || athenaThinking) ? "not-allowed" : "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                          transition: "all 0.15s",
+                          boxShadow: (!athenaInput.trim() || athenaThinking) ? "none" : "0 0 14px rgba(191,95,255,0.4)",
+                        }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="5" y1="12" x2="19" y2="12" />
+                          <polyline points="12 5 19 12 12 19" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div style={{ fontSize: 10, color: "#475569", marginTop: 8, textAlign: "center" }}>
+                      Athena will deep-dive into the {drillDownData.length} conversations in this segment · Backend coming soon
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         );
@@ -1962,7 +2299,7 @@ export default function FeedbackAndSuggestion() {
                   onChange={e => setNewProduct(e.target.value)}
                   style={{
                     width: "100%",
-                    background: "rgba(255,255,255,0.04)",
+                    background: "#111827",
                     border: "1px solid rgba(255,255,255,0.08)",
                     borderRadius: 10,
                     color: "#e2e8f0",
@@ -1973,8 +2310,8 @@ export default function FeedbackAndSuggestion() {
                     boxSizing: "border-box",
                   }}
                 >
-                  <option value="CFD">CFD</option>
-                  <option value="Futures">Futures</option>
+                  <option value="CFD" style={{ background: "#111827", color: "#e2e8f0" }}>CFD</option>
+                  <option value="Futures" style={{ background: "#111827", color: "#e2e8f0" }}>Futures</option>
                 </select>
               </div>
               <div>
