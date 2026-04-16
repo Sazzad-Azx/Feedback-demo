@@ -640,7 +640,7 @@ export default function FeedbackAndSuggestion() {
 
   const athenaActiveSession = athenaSessions.find(s => s.id === athenaActiveSessionId) || null;
 
-  const openAthenaForContext = (contextLabel, contextType, contextValue, contextColor, itemCount) => {
+  const openAthenaForContext = (contextLabel, contextType, contextValue, contextColor, itemCount, items = []) => {
     // Check for existing session with same context
     const existing = athenaSessions.find(s => s.contextType === contextType && s.contextValue === contextValue);
     if (existing) {
@@ -648,6 +648,13 @@ export default function FeedbackAndSuggestion() {
       setAthenaState("open");
       return;
     }
+    // Compute summary chips from items
+    const priorityCounts = {};
+    const productCounts = {};
+    items.forEach(it => {
+      priorityCounts[it.priority] = (priorityCounts[it.priority] || 0) + 1;
+      productCounts[it.product] = (productCounts[it.product] || 0) + 1;
+    });
     const newSession = {
       id: `athena-${Date.now()}`,
       contextLabel,
@@ -655,6 +662,8 @@ export default function FeedbackAndSuggestion() {
       contextValue,
       contextColor,
       itemCount,
+      priorityCounts,
+      productCounts,
       messages: [],
       createdAt: Date.now(),
     };
@@ -1349,7 +1358,8 @@ export default function FeedbackAndSuggestion() {
                     "allUngrouped",
                     activeTab,
                     "#00B4FF",
-                    filtered.length
+                    filtered.length,
+                    filtered
                   )}
                   style={{
                     background: "linear-gradient(135deg, rgba(0,180,255,0.12), rgba(0,229,255,0.06))",
@@ -1589,7 +1599,7 @@ export default function FeedbackAndSuggestion() {
                               <button
                                 onClick={e => {
                                   e.stopPropagation();
-                                  openAthenaForContext(t.theme, "feedbackArea", t.theme, barColor, t.items.length);
+                                  openAthenaForContext(t.theme, "feedbackArea", t.theme, barColor, t.items.length, t.items);
                                 }}
                                 style={{
                                   background: "linear-gradient(135deg, rgba(0,180,255,0.12), rgba(0,229,255,0.06))",
@@ -1966,7 +1976,8 @@ export default function FeedbackAndSuggestion() {
                         drillDown.type,
                         drillDown.value,
                         drillDown.color,
-                        drillDownData.length
+                        drillDownData.length,
+                        drillDownData
                       );
                     }}
                     style={{
@@ -2329,11 +2340,12 @@ export default function FeedbackAndSuggestion() {
               display: "flex", flexDirection: "column",
               background: "rgba(8,12,18,0.6)",
             }}>
-              {/* Sidebar header */}
+              {/* Sidebar header — #1 gradient glow */}
               <div style={{
                 padding: "16px 16px 12px",
-                borderBottom: "1px solid rgba(255,255,255,0.06)",
+                borderBottom: "none",
                 display: "flex", alignItems: "center", gap: 10,
+                position: "relative",
               }}>
                 <AthenaIcon size={28} />
                 <span style={{ fontSize: 14, fontWeight: 700, color: "#e2e8f0" }}>Athena</span>
@@ -2343,6 +2355,19 @@ export default function FeedbackAndSuggestion() {
                   WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                   letterSpacing: 0.5,
                 }}>AI</span>
+                {/* Gradient bottom border */}
+                <div style={{
+                  position: "absolute", bottom: 0, left: 12, right: 12, height: 2, borderRadius: 1,
+                  background: "linear-gradient(90deg, #00E5FF, #BF5FFF, #FF3CAC)",
+                  opacity: 0.4,
+                }} />
+                {/* Radial glow behind header */}
+                <div style={{
+                  position: "absolute", bottom: -10, left: "50%", transform: "translateX(-50%)",
+                  width: 160, height: 20,
+                  background: "radial-gradient(ellipse, rgba(191,95,255,0.15) 0%, transparent 70%)",
+                  pointerEvents: "none",
+                }} />
               </div>
 
               {/* Session list */}
@@ -2362,6 +2387,7 @@ export default function FeedbackAndSuggestion() {
                       marginBottom: 4,
                       background: s.id === athenaActiveSessionId ? "rgba(191,95,255,0.1)" : "transparent",
                       border: s.id === athenaActiveSessionId ? "1px solid rgba(191,95,255,0.2)" : "1px solid transparent",
+                      borderLeft: s.id === athenaActiveSessionId ? `3px solid ${s.contextColor || "#BF5FFF"}` : "3px solid transparent",
                       transition: "all 0.15s",
                       display: "flex", alignItems: "flex-start", gap: 8,
                     }}
@@ -2463,13 +2489,20 @@ export default function FeedbackAndSuggestion() {
               {/* Chat area */}
               {athenaActiveSession ? (
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-                  <div ref={athenaScrollRef} style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
+                  {/* #6 Radial gradient background */}
+                  <div ref={athenaScrollRef} style={{
+                    flex: 1, overflowY: "auto", padding: "20px 24px",
+                    background: "radial-gradient(ellipse at 50% 30%, rgba(123,47,255,0.06) 0%, rgba(0,229,255,0.03) 40%, transparent 70%)",
+                  }}>
                     {/* Welcome state */}
                     {athenaActiveSession.messages.length === 0 && (
-                      <div style={{ textAlign: "center", paddingTop: 40 }}>
-                        <AthenaIcon size={70} />
+                      <div style={{ textAlign: "center", paddingTop: 30 }}>
+                        {/* #5 Animated floating Athena icon */}
+                        <div style={{ animation: "athenaFloat 3s ease-in-out infinite", display: "inline-block" }}>
+                          <AthenaIcon size={80} />
+                        </div>
                         <div style={{
-                          fontSize: 22, fontWeight: 700, marginTop: 16,
+                          fontSize: 24, fontWeight: 700, marginTop: 16,
                           background: "linear-gradient(90deg, #00E5FF, #BF5FFF, #FF3CAC)",
                           WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         }}>
@@ -2482,28 +2515,71 @@ export default function FeedbackAndSuggestion() {
                           <div style={{ width: 8, height: 8, borderRadius: "50%", background: athenaActiveSession.contextColor, boxShadow: `0 0 8px ${athenaActiveSession.contextColor}` }} />
                           <span style={{ fontSize: 14, fontWeight: 600, color: athenaActiveSession.contextColor }}>{athenaActiveSession.contextLabel}</span>
                         </div>
-                        {/* Suggested questions */}
+
+                        {/* #8 Context summary chips */}
+                        {(Object.keys(athenaActiveSession.priorityCounts || {}).length > 0 || Object.keys(athenaActiveSession.productCounts || {}).length > 0) && (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", marginTop: 16 }}>
+                            {Object.entries(athenaActiveSession.priorityCounts || {}).map(([p, count]) => (
+                              <span key={p} style={{
+                                fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 12,
+                                background: PRIORITY_COLORS[p]?.bg || "rgba(148,163,184,0.1)",
+                                color: PRIORITY_COLORS[p]?.text || "#94a3b8",
+                                border: `1px solid ${(PRIORITY_COLORS[p]?.text || "#94a3b8")}22`,
+                              }}>
+                                {p}: {count}
+                              </span>
+                            ))}
+                            {Object.entries(athenaActiveSession.productCounts || {}).map(([p, count]) => (
+                              <span key={p} style={{
+                                fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 12,
+                                background: p === "CFD" ? "rgba(56,189,248,0.12)" : "rgba(168,85,247,0.12)",
+                                color: p === "CFD" ? "#38bdf8" : "#a855f7",
+                                border: `1px solid ${p === "CFD" ? "rgba(56,189,248,0.2)" : "rgba(168,85,247,0.2)"}`,
+                              }}>
+                                {p}: {count}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* #7 Suggested questions as cards */}
                         <div style={{ marginTop: 28, fontSize: 10, fontWeight: 600, color: "#475569", textTransform: "uppercase", letterSpacing: 1 }}>Try asking</div>
                         <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
                           {[
-                            "What are the most common pain points here?",
-                            "What's the overall sentiment in this group?",
-                            "Which feedback should we prioritize first?",
-                            "Are there recurring patterns in the customer language?",
-                          ].map((q, i) => (
+                            { icon: "🔍", q: "What are the most common pain points here?" },
+                            { icon: "📊", q: "What's the overall sentiment in this group?" },
+                            { icon: "🎯", q: "Which feedback should we prioritize first?" },
+                            { icon: "🔁", q: "Are there recurring patterns in the customer language?" },
+                          ].map(({ icon, q }, i) => (
                             <div
                               key={i}
                               onClick={() => sendAthenaMessage(q)}
                               style={{
-                                padding: "10px 18px", borderRadius: 10, fontSize: 13, color: "#94a3b8",
-                                background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)",
-                                cursor: "pointer", transition: "all 0.15s", maxWidth: 400, width: "100%",
-                                display: "flex", alignItems: "center", gap: 10,
+                                padding: "12px 18px", borderRadius: 12, fontSize: 13, color: "#94a3b8",
+                                background: "rgba(255,255,255,0.02)",
+                                border: "1px solid rgba(255,255,255,0.06)",
+                                cursor: "pointer", transition: "all 0.2s", maxWidth: 420, width: "100%",
+                                display: "flex", alignItems: "center", gap: 12,
+                                backdropFilter: "blur(4px)",
                               }}
-                              onMouseOver={e => { e.currentTarget.style.background = "rgba(191,95,255,0.08)"; e.currentTarget.style.borderColor = "rgba(191,95,255,0.2)"; e.currentTarget.style.color = "#e2e8f0"; }}
-                              onMouseOut={e => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "#94a3b8"; }}
+                              onMouseOver={e => {
+                                e.currentTarget.style.background = "rgba(191,95,255,0.08)";
+                                e.currentTarget.style.borderColor = "rgba(191,95,255,0.3)";
+                                e.currentTarget.style.color = "#e2e8f0";
+                                e.currentTarget.style.transform = "translateX(4px)";
+                                e.currentTarget.style.boxShadow = "0 2px 12px rgba(191,95,255,0.1)";
+                              }}
+                              onMouseOut={e => {
+                                e.currentTarget.style.background = "rgba(255,255,255,0.02)";
+                                e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)";
+                                e.currentTarget.style.color = "#94a3b8";
+                                e.currentTarget.style.transform = "translateX(0)";
+                                e.currentTarget.style.boxShadow = "none";
+                              }}
                             >
-                              <span style={{ color: "#BF5FFF" }}>→</span> {q}
+                              <span style={{ fontSize: 16, flexShrink: 0 }}>{icon}</span>
+                              <span style={{ flex: 1, textAlign: "left" }}>{q}</span>
+                              <span style={{ color: "#BF5FFF", fontSize: 16, transition: "transform 0.2s" }}>→</span>
                             </div>
                           ))}
                         </div>
@@ -2581,8 +2657,13 @@ export default function FeedbackAndSuggestion() {
                         </svg>
                       </button>
                     </div>
-                    <div style={{ fontSize: 10, color: "#334155", textAlign: "center", marginTop: 8 }}>
-                      Athena will deep-dive into the conversations in this segment · Backend coming soon
+                    <div style={{
+                      fontSize: 10, textAlign: "center", marginTop: 8, fontWeight: 600, letterSpacing: 0.5,
+                      background: "linear-gradient(90deg, #00E5FF, #BF5FFF, #FF3CAC)",
+                      WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                      opacity: 0.4,
+                    }}>
+                      Powered by Athena AI
                     </div>
                   </div>
                 </div>
