@@ -1342,42 +1342,82 @@ export default function FeedbackAndSuggestion() {
                 {activeTab === "feedback" ? "Ungrouped Feedback" : "Ungrouped Suggestions"}
                 <span style={{ fontSize: 12, color: "#475569", fontWeight: 400, marginLeft: 8 }}>{filtered.length} results</span>
               </div>
-              <button
-                onClick={() => {
-                  const headers = ["ID", "Date", "Chat ID", "Headline", "Full Text", "Category", "Product", "Sentiment", "Priority", "Status", "Type", "Common Topic"];
-                  const escapeCSV = (val) => {
-                    const s = String(val ?? "");
-                    return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
-                  };
-                  const rows = filtered.map(fb => [fb.id, fb.date, fb.chatId, fb.headline, fb.fullText, fb.category, fb.product, fb.sentiment, fb.priority, fb.status, fb.type, fb.common_topic || ""].map(escapeCSV).join(","));
-                  const csv = [headers.join(","), ...rows].join("\n");
-                  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = `${activeTab}-data.csv`;
-                  a.click();
-                  URL.revokeObjectURL(url);
-                }}
-                style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  borderRadius: 8,
-                  color: "#94a3b8",
-                  padding: "6px 14px",
-                  fontSize: 12,
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  transition: "background 0.15s, color 0.15s",
-                }}
-                onMouseOver={e => { e.currentTarget.style.background = "rgba(34,197,94,0.15)"; e.currentTarget.style.color = "#22c55e"; }}
-                onMouseOut={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "#94a3b8"; }}
-              >
-                <span style={{ fontSize: 14 }}>⬇</span> Download CSV
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <button
+                  onClick={() => openAthenaForContext(
+                    `All ${activeTab === "feedback" ? "Feedback" : "Suggestions"}`,
+                    "allUngrouped",
+                    activeTab,
+                    "#00B4FF",
+                    filtered.length
+                  )}
+                  style={{
+                    background: "linear-gradient(135deg, rgba(0,180,255,0.12), rgba(0,229,255,0.06))",
+                    border: "1px solid rgba(0,180,255,0.5)",
+                    borderRadius: 8, color: "#00E5FF", padding: "6px 14px",
+                    fontSize: 12, fontWeight: 700, cursor: "pointer",
+                    display: "flex", alignItems: "center", gap: 7,
+                    animation: "athenaFlameGlow 2.5s ease-in-out infinite",
+                    transition: "all 0.2s",
+                    letterSpacing: 0.3,
+                  }}
+                  onMouseOver={e => {
+                    e.currentTarget.style.background = "linear-gradient(135deg, rgba(0,180,255,0.22), rgba(0,229,255,0.12))";
+                    e.currentTarget.style.boxShadow = "0 0 16px rgba(0,210,255,0.7), 0 0 32px rgba(0,180,255,0.4), 0 0 60px rgba(100,140,255,0.2)";
+                    e.currentTarget.style.transform = "scale(1.03)";
+                  }}
+                  onMouseOut={e => {
+                    e.currentTarget.style.background = "linear-gradient(135deg, rgba(0,180,255,0.12), rgba(0,229,255,0.06))";
+                    e.currentTarget.style.boxShadow = "";
+                    e.currentTarget.style.transform = "scale(1)";
+                  }}
+                >
+                  <AthenaIcon size={20} />
+                  Ask Athena
+                  <span style={{
+                    fontSize: 9, fontWeight: 800,
+                    background: "linear-gradient(90deg, #00E5FF, #38bdf8)",
+                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                    letterSpacing: 0.8,
+                  }}>AI</span>
+                </button>
+                <button
+                  onClick={() => {
+                    const headers = ["ID", "Date", "Chat ID", "Headline", "Full Text", "Category", "Product", "Sentiment", "Priority", "Status", "Type", "Common Topic"];
+                    const escapeCSV = (val) => {
+                      const s = String(val ?? "");
+                      return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
+                    };
+                    const rows = filtered.map(fb => [fb.id, fb.date, fb.chatId, fb.headline, fb.fullText, fb.category, fb.product, fb.sentiment, fb.priority, fb.status, fb.type, fb.common_topic || ""].map(escapeCSV).join(","));
+                    const csv = [headers.join(","), ...rows].join("\n");
+                    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `${activeTab}-data.csv`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    borderRadius: 8,
+                    color: "#94a3b8",
+                    padding: "6px 14px",
+                    fontSize: 12,
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    transition: "background 0.15s, color 0.15s",
+                  }}
+                  onMouseOver={e => { e.currentTarget.style.background = "rgba(34,197,94,0.15)"; e.currentTarget.style.color = "#22c55e"; }}
+                  onMouseOut={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "#94a3b8"; }}
+                >
+                  <span style={{ fontSize: 14 }}>⬇</span> Download CSV
+                </button>
+              </div>
             </div>
             <div style={{ overflowX: "auto", maxHeight: 520, overflowY: "auto" }}>
               <table style={{ ...styles.table, borderCollapse: "separate", borderSpacing: 0 }}>
@@ -1545,6 +1585,37 @@ export default function FeedbackAndSuggestion() {
                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                             <span style={{ fontSize: 10, color: "#64748b", transition: "transform 0.2s", transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
                             {t.theme}
+                            {isExpanded && (
+                              <button
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  openAthenaForContext(t.theme, "feedbackArea", t.theme, barColor, t.items.length);
+                                }}
+                                style={{
+                                  background: "linear-gradient(135deg, rgba(0,180,255,0.12), rgba(0,229,255,0.06))",
+                                  border: "1px solid rgba(0,180,255,0.5)",
+                                  borderRadius: 6, color: "#00E5FF", padding: "4px 10px",
+                                  fontSize: 11, fontWeight: 700, cursor: "pointer",
+                                  display: "inline-flex", alignItems: "center", gap: 6,
+                                  animation: "athenaFlameGlow 2.5s ease-in-out infinite",
+                                  transition: "all 0.2s",
+                                  marginLeft: 6, flexShrink: 0,
+                                }}
+                                onMouseOver={e => {
+                                  e.currentTarget.style.background = "linear-gradient(135deg, rgba(0,180,255,0.22), rgba(0,229,255,0.12))";
+                                  e.currentTarget.style.boxShadow = "0 0 16px rgba(0,210,255,0.7), 0 0 32px rgba(0,180,255,0.4)";
+                                  e.currentTarget.style.transform = "scale(1.05)";
+                                }}
+                                onMouseOut={e => {
+                                  e.currentTarget.style.background = "linear-gradient(135deg, rgba(0,180,255,0.12), rgba(0,229,255,0.06))";
+                                  e.currentTarget.style.boxShadow = "";
+                                  e.currentTarget.style.transform = "scale(1)";
+                                }}
+                              >
+                                <AthenaIcon size={16} />
+                                Ask Athena
+                              </button>
+                            )}
                           </div>
                         </td>
                         <td style={{ ...styles.td, textAlign: "center" }}>
@@ -1707,41 +1778,6 @@ export default function FeedbackAndSuggestion() {
                           </tr>
                         );
                       })}
-                      {/* Ask Athena button row */}
-                      {isExpanded && (
-                        <tr onClick={e => e.stopPropagation()}>
-                          <td colSpan={6} style={{
-                            padding: "8px 16px 12px",
-                            background: "rgba(0,0,0,0.2)",
-                            borderBottom: "1px solid rgba(255,255,255,0.03)",
-                          }}>
-                            <div style={{ display: "flex", justifyContent: "flex-start", paddingLeft: 28 }}>
-                              <button
-                                onClick={() => openAthenaForContext(
-                                  t.theme,
-                                  "feedbackArea",
-                                  t.theme,
-                                  barColor,
-                                  t.items.length
-                                )}
-                                style={{
-                                  display: "inline-flex", alignItems: "center", gap: 8,
-                                  background: "rgba(191,95,255,0.08)",
-                                  border: "1px solid rgba(191,95,255,0.2)",
-                                  borderRadius: 10, padding: "7px 16px",
-                                  color: "#BF5FFF", fontSize: 12, fontWeight: 600,
-                                  cursor: "pointer", transition: "all 0.15s",
-                                }}
-                                onMouseOver={e => { e.currentTarget.style.background = "rgba(191,95,255,0.15)"; e.currentTarget.style.borderColor = "rgba(191,95,255,0.35)"; }}
-                                onMouseOut={e => { e.currentTarget.style.background = "rgba(191,95,255,0.08)"; e.currentTarget.style.borderColor = "rgba(191,95,255,0.2)"; }}
-                              >
-                                <AthenaIcon size={18} />
-                                Ask Athena about this area
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
                       </React.Fragment>
                     );
                   })}
@@ -1923,17 +1959,55 @@ export default function FeedbackAndSuggestion() {
                   <div style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>{drillDownData.length} records</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  {(
-                    <button
-                      onClick={exportDrillCSV}
-                      style={{
-                        background: "transparent", border: "1px solid rgba(52,211,153,0.4)",
-                        borderRadius: 8, color: "#34d399", padding: "7px 16px",
-                        fontSize: 12, fontWeight: 600, cursor: "pointer",
-                        display: "flex", alignItems: "center", gap: 6,
-                      }}
-                    >Export CSV</button>
-                  )}
+                  <button
+                    onClick={() => {
+                      openAthenaForContext(
+                        drillDown.label,
+                        drillDown.type,
+                        drillDown.value,
+                        drillDown.color,
+                        drillDownData.length
+                      );
+                    }}
+                    style={{
+                      background: "linear-gradient(135deg, rgba(0,180,255,0.12), rgba(0,229,255,0.06))",
+                      border: "1px solid rgba(0,180,255,0.5)",
+                      borderRadius: 8, color: "#00E5FF", padding: "7px 16px",
+                      fontSize: 12, fontWeight: 700, cursor: "pointer",
+                      display: "flex", alignItems: "center", gap: 8,
+                      animation: "athenaFlameGlow 2.5s ease-in-out infinite",
+                      transition: "all 0.2s",
+                      letterSpacing: 0.3,
+                    }}
+                    onMouseOver={e => {
+                      e.currentTarget.style.background = "linear-gradient(135deg, rgba(0,180,255,0.22), rgba(0,229,255,0.12))";
+                      e.currentTarget.style.boxShadow = "0 0 16px rgba(0,210,255,0.7), 0 0 32px rgba(0,180,255,0.4), 0 0 60px rgba(100,140,255,0.2)";
+                      e.currentTarget.style.transform = "scale(1.03)";
+                    }}
+                    onMouseOut={e => {
+                      e.currentTarget.style.background = "linear-gradient(135deg, rgba(0,180,255,0.12), rgba(0,229,255,0.06))";
+                      e.currentTarget.style.boxShadow = "";
+                      e.currentTarget.style.transform = "scale(1)";
+                    }}
+                  >
+                    <AthenaIcon size={22} />
+                    Ask Athena
+                    <span style={{
+                      fontSize: 9, fontWeight: 800,
+                      background: "linear-gradient(90deg, #00E5FF, #38bdf8)",
+                      WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                      letterSpacing: 0.8,
+                    }}>AI</span>
+                  </button>
+                  <button
+                    onClick={exportDrillCSV}
+                    style={{
+                      background: "transparent", border: "1px solid rgba(52,211,153,0.4)",
+                      borderRadius: 8, color: "#34d399", padding: "7px 16px",
+                      fontSize: 12, fontWeight: 600, cursor: "pointer",
+                      display: "flex", alignItems: "center", gap: 6,
+                    }}
+                  >Export CSV</button>
                   <button
                     onClick={closeDrillDown}
                     style={{
@@ -1946,25 +2020,14 @@ export default function FeedbackAndSuggestion() {
                 </div>
               </div>
 
-              {/* View Switcher — Records vs Ask Athena */}
-              <div style={{ padding: "0 28px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0, display: "flex", gap: 4 }}>
-                <button
-                  onClick={() => {}}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "#f1f5f9",
-                    padding: "12px 16px",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    borderBottom: "2px solid #818cf8",
-                    transition: "color 0.15s, border-color 0.15s",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
+              {/* Records bar */}
+              <div style={{ padding: "0 28px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
+                <div style={{
+                  padding: "12px 0",
+                  fontSize: 13, fontWeight: 600, color: "#f1f5f9",
+                  borderBottom: "2px solid #818cf8",
+                  display: "inline-flex", alignItems: "center", gap: 8,
+                }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="8" y1="6" x2="21" y2="6" />
                     <line x1="8" y1="12" x2="21" y2="12" />
@@ -1977,44 +2040,7 @@ export default function FeedbackAndSuggestion() {
                   <span style={{ fontSize: 11, background: "rgba(255,255,255,0.06)", padding: "2px 7px", borderRadius: 6, color: "#94a3b8" }}>
                     {drillDownData.length}
                   </span>
-                </button>
-                <button
-                  onClick={() => {
-                    openAthenaForContext(
-                      drillDown.label,
-                      drillDown.type,
-                      drillDown.value,
-                      drillDown.color,
-                      drillDownData.length
-                    );
-                  }}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "#64748b",
-                    padding: "12px 16px",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    borderBottom: "2px solid transparent",
-                    transition: "color 0.15s, border-color 0.15s",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                  onMouseOver={e => e.currentTarget.style.color = "#BF5FFF"}
-                  onMouseOut={e => e.currentTarget.style.color = "#64748b"}
-                >
-                  <AthenaIcon size={32} />
-                  Ask Athena
-                  <span style={{
-                    fontSize: 10, fontWeight: 700,
-                    background: "linear-gradient(90deg, #00E5FF, #BF5FFF, #FF3CAC)",
-                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                    backgroundClip: "text", color: "transparent",
-                    letterSpacing: 0.5,
-                  }}>AI</span>
-                </button>
+                </div>
               </div>
 
               {/* Records View — Table */}
