@@ -630,45 +630,87 @@ export default function FeedbackAndSuggestion() {
   const [newProduct, setNewProduct] = useState("CFD");
   const [newPriority, setNewPriority] = useState("Medium");
   const [toast, setToast] = useState(null);
-  const [drillView, setDrillView] = useState("records"); // "records" | "athena"
-  const [athenaMessages, setAthenaMessages] = useState([]);
+  // ─── Global Athena State ─────────────────────────────────────
+  const [athenaState, setAthenaState] = useState("closed"); // "open" | "minimized" | "closed"
+  const [athenaSessions, setAthenaSessions] = useState([]); // [{ id, contextLabel, contextType, contextValue, contextColor, itemCount, messages: [{role, content, time}], createdAt }]
+  const [athenaActiveSessionId, setAthenaActiveSessionId] = useState(null);
   const [athenaInput, setAthenaInput] = useState("");
   const [athenaThinking, setAthenaThinking] = useState(false);
   const athenaScrollRef = useRef(null);
 
-  const openDrillDown = (data) => {
-    setDrillDown(data);
-    setDrillPage(1);
-    setDrillView("records");
-    setAthenaMessages([]);
+  const athenaActiveSession = athenaSessions.find(s => s.id === athenaActiveSessionId) || null;
+
+  const openAthenaForContext = (contextLabel, contextType, contextValue, contextColor, itemCount) => {
+    // Check for existing session with same context
+    const existing = athenaSessions.find(s => s.contextType === contextType && s.contextValue === contextValue);
+    if (existing) {
+      setAthenaActiveSessionId(existing.id);
+      setAthenaState("open");
+      return;
+    }
+    const newSession = {
+      id: `athena-${Date.now()}`,
+      contextLabel,
+      contextType,
+      contextValue,
+      contextColor,
+      itemCount,
+      messages: [],
+      createdAt: Date.now(),
+    };
+    setAthenaSessions(prev => [newSession, ...prev]);
+    setAthenaActiveSessionId(newSession.id);
     setAthenaInput("");
+    setAthenaState("open");
   };
-  const closeDrillDown = () => setDrillDown(null);
+
+  const closeAthenaSession = (sessionId) => {
+    setAthenaSessions(prev => prev.filter(s => s.id !== sessionId));
+    if (athenaActiveSessionId === sessionId) {
+      setAthenaActiveSessionId(prev => {
+        const remaining = athenaSessions.filter(s => s.id !== sessionId);
+        return remaining.length > 0 ? remaining[0].id : null;
+      });
+    }
+  };
 
   const sendAthenaMessage = (text) => {
+    if (!athenaActiveSession) return;
     const msg = (text ?? athenaInput).trim();
     if (!msg) return;
-    setAthenaMessages(prev => [...prev, { role: "user", content: msg, time: Date.now() }]);
+    const sessionId = athenaActiveSession.id;
+    setAthenaSessions(prev => prev.map(s =>
+      s.id === sessionId ? { ...s, messages: [...s.messages, { role: "user", content: msg, time: Date.now() }] } : s
+    ));
     setAthenaInput("");
     setAthenaThinking(true);
     setTimeout(() => {
-      const contextLabel = drillDown?.label || "this segment";
+      const label = athenaActiveSession.contextLabel;
+      const count = athenaActiveSession.itemCount;
       const placeholderResponses = [
-        `I'm analyzing ${drillDownData.length} ${activeTab === "feedback" ? "feedback entries" : "suggestions"} related to "${contextLabel}". The backend integration is being finalized — once connected, I'll deep-dive into conversations and surface patterns, sentiment trends, and actionable insights for your query.`,
-        `Based on the ${drillDownData.length} records in this view, I'll be able to identify recurring topics, extract customer pain points, and recommend priorities. My full conversational analysis engine will be available shortly.`,
-        `Great question. Once my connection to the conversation store is live, I'll pull the most relevant chats, summarize them, and highlight key takeaways specific to "${contextLabel}". Stay tuned.`,
+        `I'm analyzing ${count} ${activeTab === "feedback" ? "feedback entries" : "suggestions"} related to "${label}". The backend integration is being finalized — once connected, I'll deep-dive into conversations and surface patterns, sentiment trends, and actionable insights for your query.`,
+        `Based on the ${count} records in this view, I'll be able to identify recurring topics, extract customer pain points, and recommend priorities. My full conversational analysis engine will be available shortly.`,
+        `Great question. Once my connection to the conversation store is live, I'll pull the most relevant chats, summarize them, and highlight key takeaways specific to "${label}". Stay tuned.`,
       ];
       const response = placeholderResponses[Math.floor(Math.random() * placeholderResponses.length)];
-      setAthenaMessages(prev => [...prev, { role: "athena", content: response, time: Date.now() }]);
+      setAthenaSessions(prev => prev.map(s =>
+        s.id === sessionId ? { ...s, messages: [...s.messages, { role: "athena", content: response, time: Date.now() }] } : s
+      ));
       setAthenaThinking(false);
     }, 1200);
   };
 
   useEffect(() => {
-    if (drillView === "athena" && athenaScrollRef.current) {
+    if (athenaState === "open" && athenaScrollRef.current) {
       athenaScrollRef.current.scrollTop = athenaScrollRef.current.scrollHeight;
     }
-  }, [athenaMessages, athenaThinking, drillView]);
+  }, [athenaActiveSession?.messages, athenaThinking, athenaState]);
+
+  const openDrillDown = (data) => {
+    setDrillDown(data);
+    setDrillPage(1);
+  };
+  const closeDrillDown = () => setDrillDown(null);
 
   // ─── AI-simulated classification & headline generation ──
   const classifyCategory = (text) => {
@@ -1560,7 +1602,7 @@ export default function FeedbackAndSuggestion() {
                         </td>
                       </tr>
                       {isExpanded && t.items.map((item, idx) => {
-                        const isLast = idx === t.items.length - 1;
+                        const isLast = false; // no bottom border between items, Athena button row handles it
                         const childTdBase = {
                           padding: "10px 16px",
                           fontSize: 12,
@@ -1665,6 +1707,41 @@ export default function FeedbackAndSuggestion() {
                           </tr>
                         );
                       })}
+                      {/* Ask Athena button row */}
+                      {isExpanded && (
+                        <tr onClick={e => e.stopPropagation()}>
+                          <td colSpan={6} style={{
+                            padding: "8px 16px 12px",
+                            background: "rgba(0,0,0,0.2)",
+                            borderBottom: "1px solid rgba(255,255,255,0.03)",
+                          }}>
+                            <div style={{ display: "flex", justifyContent: "flex-start", paddingLeft: 28 }}>
+                              <button
+                                onClick={() => openAthenaForContext(
+                                  t.theme,
+                                  "feedbackArea",
+                                  t.theme,
+                                  barColor,
+                                  t.items.length
+                                )}
+                                style={{
+                                  display: "inline-flex", alignItems: "center", gap: 8,
+                                  background: "rgba(191,95,255,0.08)",
+                                  border: "1px solid rgba(191,95,255,0.2)",
+                                  borderRadius: 10, padding: "7px 16px",
+                                  color: "#BF5FFF", fontSize: 12, fontWeight: 600,
+                                  cursor: "pointer", transition: "all 0.15s",
+                                }}
+                                onMouseOver={e => { e.currentTarget.style.background = "rgba(191,95,255,0.15)"; e.currentTarget.style.borderColor = "rgba(191,95,255,0.35)"; }}
+                                onMouseOut={e => { e.currentTarget.style.background = "rgba(191,95,255,0.08)"; e.currentTarget.style.borderColor = "rgba(191,95,255,0.2)"; }}
+                              >
+                                <AthenaIcon size={18} />
+                                Ask Athena about this area
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
                       </React.Fragment>
                     );
                   })}
@@ -1846,7 +1923,7 @@ export default function FeedbackAndSuggestion() {
                   <div style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>{drillDownData.length} records</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  {drillView === "records" && (
+                  {(
                     <button
                       onClick={exportDrillCSV}
                       style={{
@@ -1872,16 +1949,16 @@ export default function FeedbackAndSuggestion() {
               {/* View Switcher — Records vs Ask Athena */}
               <div style={{ padding: "0 28px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0, display: "flex", gap: 4 }}>
                 <button
-                  onClick={() => setDrillView("records")}
+                  onClick={() => {}}
                   style={{
                     background: "transparent",
                     border: "none",
-                    color: drillView === "records" ? "#f1f5f9" : "#64748b",
+                    color: "#f1f5f9",
                     padding: "12px 16px",
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: "pointer",
-                    borderBottom: drillView === "records" ? "2px solid #818cf8" : "2px solid transparent",
+                    borderBottom: "2px solid #818cf8",
                     transition: "color 0.15s, border-color 0.15s",
                     display: "flex",
                     alignItems: "center",
@@ -1902,21 +1979,31 @@ export default function FeedbackAndSuggestion() {
                   </span>
                 </button>
                 <button
-                  onClick={() => setDrillView("athena")}
+                  onClick={() => {
+                    openAthenaForContext(
+                      drillDown.label,
+                      drillDown.type,
+                      drillDown.value,
+                      drillDown.color,
+                      drillDownData.length
+                    );
+                  }}
                   style={{
                     background: "transparent",
                     border: "none",
-                    color: drillView === "athena" ? "#f1f5f9" : "#64748b",
+                    color: "#64748b",
                     padding: "12px 16px",
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: "pointer",
-                    borderBottom: drillView === "athena" ? "2px solid #BF5FFF" : "2px solid transparent",
+                    borderBottom: "2px solid transparent",
                     transition: "color 0.15s, border-color 0.15s",
                     display: "flex",
                     alignItems: "center",
                     gap: 8,
                   }}
+                  onMouseOver={e => e.currentTarget.style.color = "#BF5FFF"}
+                  onMouseOut={e => e.currentTarget.style.color = "#64748b"}
                 >
                   <AthenaIcon size={32} />
                   Ask Athena
@@ -1931,7 +2018,7 @@ export default function FeedbackAndSuggestion() {
               </div>
 
               {/* Records View — Table */}
-              {drillView === "records" && (
+              {(
               <div style={{ flex: 1, overflowY: "auto", padding: "0 28px", minHeight: 0 }}>
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead style={{ position: "sticky", top: 0, background: "#111827", zIndex: 1 }}>
@@ -2002,7 +2089,7 @@ export default function FeedbackAndSuggestion() {
               )}
 
               {/* Records footer / Pagination */}
-              {drillView === "records" && (
+              {(
               <div style={{
                 padding: "14px 28px", borderTop: "1px solid rgba(255,255,255,0.06)",
                 display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0,
@@ -2020,203 +2107,6 @@ export default function FeedbackAndSuggestion() {
               </div>
               )}
 
-              {/* Athena Chat View */}
-              {drillView === "athena" && (
-                <>
-                  <div
-                    ref={athenaScrollRef}
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      padding: "24px 28px",
-                      minHeight: 0,
-                      background: "radial-gradient(ellipse at top, rgba(123,47,255,0.05) 0%, transparent 60%)",
-                    }}
-                  >
-                    {/* Welcome state */}
-                    {athenaMessages.length === 0 && (
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "20px 0" }}>
-                        <div style={{ marginBottom: 16, filter: "drop-shadow(0 0 20px rgba(123,47,255,0.5))" }}>
-                          <AthenaIcon size={80} />
-                        </div>
-                        <div style={{
-                          fontSize: 20, fontWeight: 700, marginBottom: 6,
-                          background: "linear-gradient(90deg, #00E5FF, #BF5FFF, #FF3CAC)",
-                          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                          backgroundClip: "text", color: "transparent",
-                        }}>
-                          Hi, I'm Athena
-                        </div>
-                        <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 4, maxWidth: 520 }}>
-                          Deep-diving into <strong style={{ color: "#cbd5e1" }}>{drillDownData.length}</strong> {activeTab === "feedback" ? "feedback entries" : "suggestions"} related to
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-                          <div style={{ width: 8, height: 8, borderRadius: "50%", background: drillDown.color, boxShadow: `0 0 8px ${drillDown.color}` }} />
-                          <span style={{ fontSize: 14, fontWeight: 600, color: drillDown.color }}>{drillDown.label}</span>
-                        </div>
-
-                        {/* Suggested prompts */}
-                        <div style={{ fontSize: 11, fontWeight: 600, color: "#475569", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 10 }}>Try asking</div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%", maxWidth: 520 }}>
-                          {[
-                            "What are the most common pain points here?",
-                            "What's the overall sentiment in this group?",
-                            "Which feedback should we prioritize first?",
-                            "Are there recurring patterns in the customer language?",
-                          ].map(q => (
-                            <button
-                              key={q}
-                              onClick={() => sendAthenaMessage(q)}
-                              style={{
-                                background: "rgba(255,255,255,0.03)",
-                                border: "1px solid rgba(255,255,255,0.06)",
-                                borderRadius: 10,
-                                color: "#cbd5e1",
-                                padding: "10px 14px",
-                                fontSize: 13,
-                                fontWeight: 500,
-                                cursor: "pointer",
-                                textAlign: "left",
-                                transition: "all 0.15s",
-                              }}
-                              onMouseOver={e => {
-                                e.currentTarget.style.borderColor = "rgba(191,95,255,0.4)";
-                                e.currentTarget.style.background = "rgba(191,95,255,0.06)";
-                                e.currentTarget.style.color = "#f1f5f9";
-                              }}
-                              onMouseOut={e => {
-                                e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)";
-                                e.currentTarget.style.background = "rgba(255,255,255,0.03)";
-                                e.currentTarget.style.color = "#cbd5e1";
-                              }}
-                            >
-                              <span style={{ color: "#64748b", marginRight: 6 }}>→</span> {q}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Chat messages */}
-                    {athenaMessages.length > 0 && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                        {athenaMessages.map((m, i) => (
-                          <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
-                            {m.role === "athena" && (
-                              <div style={{ flexShrink: 0, marginTop: 2 }}>
-                                <AthenaIcon size={28} />
-                              </div>
-                            )}
-                            <div style={{
-                              maxWidth: "78%",
-                              padding: "10px 14px",
-                              borderRadius: 14,
-                              fontSize: 13,
-                              lineHeight: 1.5,
-                              background: m.role === "user" ? "linear-gradient(135deg, #6366f1, #8b5cf6)" : "rgba(255,255,255,0.04)",
-                              color: m.role === "user" ? "#fff" : "#e2e8f0",
-                              border: m.role === "athena" ? "1px solid rgba(191,95,255,0.15)" : "none",
-                              boxShadow: m.role === "user" ? "0 2px 8px rgba(99,102,241,0.3)" : "none",
-                            }}>
-                              {m.content}
-                            </div>
-                          </div>
-                        ))}
-                        {athenaThinking && (
-                          <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                            <div style={{ flexShrink: 0, marginTop: 2 }}>
-                              <AthenaIcon size={28} />
-                            </div>
-                            <div style={{
-                              padding: "12px 16px",
-                              borderRadius: 14,
-                              background: "rgba(255,255,255,0.04)",
-                              border: "1px solid rgba(191,95,255,0.15)",
-                              display: "flex",
-                              gap: 4,
-                              alignItems: "center",
-                            }}>
-                              {[0, 1, 2].map(i => (
-                                <span key={i} style={{
-                                  width: 6, height: 6, borderRadius: "50%",
-                                  background: "#BF5FFF",
-                                  animation: `athenaPulse 1.4s ease-in-out ${i * 0.2}s infinite`,
-                                }} />
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Input bar */}
-                  <div style={{
-                    padding: "14px 28px 18px",
-                    borderTop: "1px solid rgba(255,255,255,0.06)",
-                    flexShrink: 0,
-                    background: "rgba(10,15,25,0.4)",
-                  }}>
-                    <div style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      background: "rgba(255,255,255,0.04)",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                      borderRadius: 24,
-                      padding: "6px 6px 6px 18px",
-                      transition: "border-color 0.15s",
-                    }}>
-                      <input
-                        type="text"
-                        value={athenaInput}
-                        onChange={e => setAthenaInput(e.target.value)}
-                        onKeyDown={e => { if (e.key === "Enter" && !athenaThinking) sendAthenaMessage(); }}
-                        placeholder="Ask Athena about this segment..."
-                        style={{
-                          flex: 1,
-                          background: "transparent",
-                          border: "none",
-                          color: "#e2e8f0",
-                          fontSize: 13,
-                          outline: "none",
-                          padding: "8px 0",
-                          fontFamily: "inherit",
-                        }}
-                      />
-                      <button
-                        onClick={() => sendAthenaMessage()}
-                        disabled={!athenaInput.trim() || athenaThinking}
-                        style={{
-                          background: (!athenaInput.trim() || athenaThinking)
-                            ? "rgba(255,255,255,0.05)"
-                            : "linear-gradient(135deg, #7B2FFF, #BF5FFF, #FF3CAC)",
-                          border: "none",
-                          color: "#fff",
-                          width: 34,
-                          height: 34,
-                          borderRadius: "50%",
-                          cursor: (!athenaInput.trim() || athenaThinking) ? "not-allowed" : "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
-                          transition: "all 0.15s",
-                          boxShadow: (!athenaInput.trim() || athenaThinking) ? "none" : "0 0 14px rgba(191,95,255,0.4)",
-                        }}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="5" y1="12" x2="19" y2="12" />
-                          <polyline points="12 5 19 12 12 19" />
-                        </svg>
-                      </button>
-                    </div>
-                    <div style={{ fontSize: 10, color: "#475569", marginTop: 8, textAlign: "center" }}>
-                      Athena will deep-dive into the {drillDownData.length} conversations in this segment · Backend coming soon
-                    </div>
-                  </div>
-                </>
-              )}
             </div>
           </div>
         );
@@ -2375,6 +2265,346 @@ export default function FeedbackAndSuggestion() {
               >Submit</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ═══ Global Athena Panel ═══════════════════════════════════ */}
+      {athenaState === "open" && (
+        <>
+          {/* Overlay backdrop */}
+          <div
+            onClick={() => setAthenaState("minimized")}
+            style={{
+              position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
+              zIndex: 3000, backdropFilter: "blur(2px)",
+              animation: "athenaBackdropIn 0.25s ease-out",
+            }}
+          />
+          {/* Panel */}
+          <div style={{
+            position: "fixed",
+            top: "50%", left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "min(94vw, 960px)",
+            height: "min(88vh, 720px)",
+            background: "rgba(11,15,20,0.98)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 16,
+            boxShadow: "0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(191,95,255,0.08)",
+            zIndex: 3001,
+            display: "flex",
+            overflow: "hidden",
+            animation: "athenaOpen 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+          }}>
+            {/* Left sidebar — sessions */}
+            <div style={{
+              width: 240, flexShrink: 0,
+              borderRight: "1px solid rgba(255,255,255,0.06)",
+              display: "flex", flexDirection: "column",
+              background: "rgba(8,12,18,0.6)",
+            }}>
+              {/* Sidebar header */}
+              <div style={{
+                padding: "16px 16px 12px",
+                borderBottom: "1px solid rgba(255,255,255,0.06)",
+                display: "flex", alignItems: "center", gap: 10,
+              }}>
+                <AthenaIcon size={28} />
+                <span style={{ fontSize: 14, fontWeight: 700, color: "#e2e8f0" }}>Athena</span>
+                <span style={{
+                  fontSize: 10, fontWeight: 700,
+                  background: "linear-gradient(90deg, #00E5FF, #BF5FFF, #FF3CAC)",
+                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                  letterSpacing: 0.5,
+                }}>AI</span>
+              </div>
+
+              {/* Session list */}
+              <div style={{ flex: 1, overflowY: "auto", padding: 8 }}>
+                {athenaSessions.length === 0 ? (
+                  <div style={{ padding: "20px 12px", textAlign: "center", fontSize: 12, color: "#475569" }}>
+                    No active chats
+                  </div>
+                ) : athenaSessions.map(s => (
+                  <div
+                    key={s.id}
+                    onClick={() => { setAthenaActiveSessionId(s.id); setAthenaInput(""); }}
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      cursor: "pointer",
+                      marginBottom: 4,
+                      background: s.id === athenaActiveSessionId ? "rgba(191,95,255,0.1)" : "transparent",
+                      border: s.id === athenaActiveSessionId ? "1px solid rgba(191,95,255,0.2)" : "1px solid transparent",
+                      transition: "all 0.15s",
+                      display: "flex", alignItems: "flex-start", gap: 8,
+                    }}
+                    onMouseOver={e => { if (s.id !== athenaActiveSessionId) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+                    onMouseOut={e => { if (s.id !== athenaActiveSessionId) e.currentTarget.style.background = "transparent"; }}
+                  >
+                    <div style={{
+                      width: 8, height: 8, borderRadius: "50%", flexShrink: 0, marginTop: 4,
+                      background: s.contextColor || "#BF5FFF",
+                      boxShadow: `0 0 8px ${s.contextColor || "#BF5FFF"}66`,
+                    }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        fontSize: 12, fontWeight: 600, color: "#e2e8f0",
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      }}>
+                        {s.contextLabel}
+                      </div>
+                      <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>
+                        {s.itemCount} {s.itemCount === 1 ? "record" : "records"} · {s.messages.length} msgs
+                      </div>
+                    </div>
+                    {/* Close session button */}
+                    <button
+                      onClick={e => { e.stopPropagation(); closeAthenaSession(s.id); }}
+                      style={{
+                        background: "none", border: "none", color: "#475569",
+                        cursor: "pointer", fontSize: 14, padding: "0 2px", lineHeight: 1,
+                        flexShrink: 0,
+                      }}
+                      onMouseOver={e => e.target.style.color = "#ef4444"}
+                      onMouseOut={e => e.target.style.color = "#475569"}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right panel — active chat */}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+              {/* Panel header */}
+              <div style={{
+                padding: "14px 20px",
+                borderBottom: "1px solid rgba(255,255,255,0.06)",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                flexShrink: 0,
+              }}>
+                <div>
+                  {athenaActiveSession ? (
+                    <>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0", display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ width: 10, height: 10, borderRadius: "50%", background: athenaActiveSession.contextColor, boxShadow: `0 0 8px ${athenaActiveSession.contextColor}66` }} />
+                        {athenaActiveSession.contextLabel}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+                        {athenaActiveSession.itemCount} {activeTab === "feedback" ? "feedback entries" : "suggestions"}
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "#64748b" }}>Select a chat</div>
+                  )}
+                </div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {/* Minimize */}
+                  <button
+                    onClick={() => setAthenaState("minimized")}
+                    title="Minimize"
+                    style={{
+                      background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                      borderRadius: 8, width: 32, height: 32, cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      color: "#94a3b8", fontSize: 16, transition: "all 0.15s",
+                    }}
+                    onMouseOver={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "#e2e8f0"; }}
+                    onMouseOut={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "#94a3b8"; }}
+                  >
+                    −
+                  </button>
+                  {/* Close */}
+                  <button
+                    onClick={() => setAthenaState("closed")}
+                    title="Close Athena"
+                    style={{
+                      background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                      borderRadius: 8, width: 32, height: 32, cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      color: "#94a3b8", fontSize: 14, transition: "all 0.15s",
+                    }}
+                    onMouseOver={e => { e.currentTarget.style.background = "rgba(239,68,68,0.15)"; e.currentTarget.style.color = "#ef4444"; }}
+                    onMouseOut={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "#94a3b8"; }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              {/* Chat area */}
+              {athenaActiveSession ? (
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+                  <div ref={athenaScrollRef} style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
+                    {/* Welcome state */}
+                    {athenaActiveSession.messages.length === 0 && (
+                      <div style={{ textAlign: "center", paddingTop: 40 }}>
+                        <AthenaIcon size={70} />
+                        <div style={{
+                          fontSize: 22, fontWeight: 700, marginTop: 16,
+                          background: "linear-gradient(90deg, #00E5FF, #BF5FFF, #FF3CAC)",
+                          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                        }}>
+                          Hi, I'm Athena
+                        </div>
+                        <div style={{ fontSize: 13, color: "#64748b", marginTop: 8, lineHeight: 1.5 }}>
+                          Deep-diving into <strong style={{ color: "#cbd5e1" }}>{athenaActiveSession.itemCount}</strong> {activeTab === "feedback" ? "feedback entries" : "suggestions"} related to
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 6 }}>
+                          <div style={{ width: 8, height: 8, borderRadius: "50%", background: athenaActiveSession.contextColor, boxShadow: `0 0 8px ${athenaActiveSession.contextColor}` }} />
+                          <span style={{ fontSize: 14, fontWeight: 600, color: athenaActiveSession.contextColor }}>{athenaActiveSession.contextLabel}</span>
+                        </div>
+                        {/* Suggested questions */}
+                        <div style={{ marginTop: 28, fontSize: 10, fontWeight: 600, color: "#475569", textTransform: "uppercase", letterSpacing: 1 }}>Try asking</div>
+                        <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
+                          {[
+                            "What are the most common pain points here?",
+                            "What's the overall sentiment in this group?",
+                            "Which feedback should we prioritize first?",
+                            "Are there recurring patterns in the customer language?",
+                          ].map((q, i) => (
+                            <div
+                              key={i}
+                              onClick={() => sendAthenaMessage(q)}
+                              style={{
+                                padding: "10px 18px", borderRadius: 10, fontSize: 13, color: "#94a3b8",
+                                background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)",
+                                cursor: "pointer", transition: "all 0.15s", maxWidth: 400, width: "100%",
+                                display: "flex", alignItems: "center", gap: 10,
+                              }}
+                              onMouseOver={e => { e.currentTarget.style.background = "rgba(191,95,255,0.08)"; e.currentTarget.style.borderColor = "rgba(191,95,255,0.2)"; e.currentTarget.style.color = "#e2e8f0"; }}
+                              onMouseOut={e => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "#94a3b8"; }}
+                            >
+                              <span style={{ color: "#BF5FFF" }}>→</span> {q}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Messages */}
+                    {athenaActiveSession.messages.length > 0 && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                        {athenaActiveSession.messages.map((m, i) => (
+                          <div key={i} style={{ display: "flex", gap: 10, justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
+                            {m.role === "athena" && (
+                              <div style={{ flexShrink: 0, marginTop: 2 }}>
+                                <AthenaIcon size={28} />
+                              </div>
+                            )}
+                            <div style={{
+                              maxWidth: "75%", padding: "10px 16px", borderRadius: 14, fontSize: 13, lineHeight: 1.6,
+                              color: "#e2e8f0",
+                              background: m.role === "user" ? "rgba(99,102,241,0.2)" : "rgba(15,20,30,0.8)",
+                              border: m.role === "athena" ? "1px solid rgba(191,95,255,0.15)" : "none",
+                            }}>
+                              {m.content}
+                            </div>
+                          </div>
+                        ))}
+                        {athenaThinking && (
+                          <div style={{ display: "flex", gap: 10 }}>
+                            <div style={{ flexShrink: 0, marginTop: 2 }}><AthenaIcon size={28} /></div>
+                            <div style={{ display: "flex", gap: 4, alignItems: "center", padding: "12px 16px", background: "rgba(15,20,30,0.8)", border: "1px solid rgba(191,95,255,0.15)", borderRadius: 14 }}>
+                              {[0, 1, 2].map(i => (
+                                <div key={i} style={{
+                                  width: 6, height: 6, borderRadius: "50%", background: "#BF5FFF",
+                                  animation: `athenaPulse 1.4s ease-in-out ${i * 0.2}s infinite`,
+                                }} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Input area */}
+                  <div style={{ padding: "12px 20px 16px", borderTop: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
+                    <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                      <input
+                        type="text"
+                        value={athenaInput}
+                        onChange={e => setAthenaInput(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter" && !athenaThinking) sendAthenaMessage(); }}
+                        placeholder="Ask Athena about this segment..."
+                        style={{
+                          flex: 1, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                          borderRadius: 12, padding: "12px 16px", color: "#e2e8f0", fontSize: 13,
+                          outline: "none", transition: "border-color 0.15s",
+                        }}
+                        onFocus={e => e.target.style.borderColor = "rgba(191,95,255,0.3)"}
+                        onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.08)"}
+                      />
+                      <button
+                        onClick={() => sendAthenaMessage()}
+                        disabled={!athenaInput.trim() || athenaThinking}
+                        style={{
+                          background: (!athenaInput.trim() || athenaThinking) ? "rgba(255,255,255,0.04)" : "linear-gradient(135deg, #7B2FFF, #BF5FFF)",
+                          border: "none", borderRadius: 12, width: 44, height: 44,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          cursor: (!athenaInput.trim() || athenaThinking) ? "not-allowed" : "pointer",
+                          transition: "all 0.2s", flexShrink: 0,
+                          boxShadow: (!athenaInput.trim() || athenaThinking) ? "none" : "0 0 14px rgba(191,95,255,0.4)",
+                        }}
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={(!athenaInput.trim() || athenaThinking) ? "#475569" : "#fff"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div style={{ fontSize: 10, color: "#334155", textAlign: "center", marginTop: 8 }}>
+                      Athena will deep-dive into the conversations in this segment · Backend coming soon
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12 }}>
+                  <AthenaIcon size={60} />
+                  <div style={{ fontSize: 14, color: "#64748b" }}>Select a chat or start a new one</div>
+                  <div style={{ fontSize: 11, color: "#334155" }}>Open Athena from any Feedback Area to begin</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ═══ Minimized Athena Floating Icon ═══════════════════════ */}
+      {athenaState === "minimized" && (
+        <div
+          onClick={() => setAthenaState("open")}
+          style={{
+            position: "fixed",
+            bottom: 24, right: 24,
+            width: 56, height: 56,
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, #0D1B2A, #070E18)",
+            border: "2px solid rgba(191,95,255,0.4)",
+            boxShadow: "0 4px 20px rgba(191,95,255,0.3), 0 0 40px rgba(191,95,255,0.1)",
+            cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            zIndex: 2500,
+            transition: "all 0.2s",
+          }}
+          onMouseOver={e => { e.currentTarget.style.transform = "scale(1.1)"; e.currentTarget.style.boxShadow = "0 4px 24px rgba(191,95,255,0.5), 0 0 50px rgba(191,95,255,0.15)"; }}
+          onMouseOut={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(191,95,255,0.3), 0 0 40px rgba(191,95,255,0.1)"; }}
+        >
+          <AthenaIcon size={32} />
+          {athenaSessions.length > 0 && (
+            <div style={{
+              position: "absolute", top: -4, right: -4,
+              width: 20, height: 20, borderRadius: "50%",
+              background: "#BF5FFF", color: "#fff",
+              fontSize: 10, fontWeight: 700,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              border: "2px solid #0b0f14",
+            }}>
+              {athenaSessions.length}
+            </div>
+          )}
         </div>
       )}
 
