@@ -1342,196 +1342,6 @@ export default function FeedbackAndSuggestion() {
           </div>
         </div>
 
-        {/* Feedback / Suggestions Table */}
-        <div style={{ marginBottom: 24 }}>
-          <div style={styles.card}>
-            <div style={styles.cardHeader}>
-              <div style={styles.cardTitle}>
-                <span style={styles.cardTitleIcon}>📋</span>
-                {activeTab === "feedback" ? "Ungrouped Feedback" : "Ungrouped Suggestions"}
-                <span style={{ fontSize: 12, color: "#475569", fontWeight: 400, marginLeft: 8 }}>{filtered.length} results</span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <button
-                  onClick={() => openAthenaForContext(
-                    `All ${activeTab === "feedback" ? "Feedback" : "Suggestions"}`,
-                    "allUngrouped",
-                    activeTab,
-                    "#00B4FF",
-                    filtered.length,
-                    filtered
-                  )}
-                  style={{
-                    background: "linear-gradient(135deg, rgba(0,180,255,0.12), rgba(0,229,255,0.06))",
-                    border: "1px solid rgba(0,180,255,0.5)",
-                    borderRadius: 8, color: "#00E5FF", padding: "6px 14px",
-                    fontSize: 12, fontWeight: 700, cursor: "pointer",
-                    display: "flex", alignItems: "center", gap: 7,
-                    animation: "athenaFlameGlow 2.5s ease-in-out infinite",
-                    transition: "all 0.2s",
-                    letterSpacing: 0.3,
-                  }}
-                  onMouseOver={e => {
-                    e.currentTarget.style.background = "linear-gradient(135deg, rgba(0,180,255,0.22), rgba(0,229,255,0.12))";
-                    e.currentTarget.style.boxShadow = "0 0 16px rgba(0,210,255,0.7), 0 0 32px rgba(0,180,255,0.4), 0 0 60px rgba(100,140,255,0.2)";
-                    e.currentTarget.style.transform = "scale(1.03)";
-                  }}
-                  onMouseOut={e => {
-                    e.currentTarget.style.background = "linear-gradient(135deg, rgba(0,180,255,0.12), rgba(0,229,255,0.06))";
-                    e.currentTarget.style.boxShadow = "";
-                    e.currentTarget.style.transform = "scale(1)";
-                  }}
-                >
-                  <AthenaIcon size={20} />
-                  Ask Athena
-                  <span style={{
-                    fontSize: 9, fontWeight: 800,
-                    background: "linear-gradient(90deg, #00E5FF, #38bdf8)",
-                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                    letterSpacing: 0.8,
-                  }}>AI</span>
-                </button>
-                <button
-                  onClick={() => {
-                    const headers = ["ID", "Date", "Chat ID", "Headline", "Full Text", "Category", "Product", "Sentiment", "Priority", "Status", "Type", "Common Topic"];
-                    const escapeCSV = (val) => {
-                      const s = String(val ?? "");
-                      return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
-                    };
-                    const rows = filtered.map(fb => [fb.id, fb.date, fb.chatId, fb.headline, fb.fullText, fb.category, fb.product, fb.sentiment, fb.priority, fb.status, fb.type, fb.common_topic || ""].map(escapeCSV).join(","));
-                    const csv = [headers.join(","), ...rows].join("\n");
-                    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = `${activeTab}-data.csv`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  }}
-                  style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    borderRadius: 8,
-                    color: "#94a3b8",
-                    padding: "6px 14px",
-                    fontSize: 12,
-                    fontWeight: 500,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    transition: "background 0.15s, color 0.15s",
-                  }}
-                  onMouseOver={e => { e.currentTarget.style.background = "rgba(34,197,94,0.15)"; e.currentTarget.style.color = "#22c55e"; }}
-                  onMouseOut={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "#94a3b8"; }}
-                >
-                  <span style={{ fontSize: 14 }}>⬇</span> Download CSV
-                </button>
-              </div>
-            </div>
-            <div style={{ overflowX: "auto", maxHeight: 520, overflowY: "auto" }}>
-              <table style={{ ...styles.table, borderCollapse: "separate", borderSpacing: 0 }}>
-                <thead style={{ position: "sticky", top: 0, zIndex: 2 }}>
-                  <tr>
-                    <th style={{ ...styles.th, cursor: "pointer", background: "#0b0f14" }} onClick={() => handleSort("date")}>Date <SortArrow field="date" /></th>
-                    <th style={{ ...styles.th, background: "#0b0f14" }}>Feedback Headline</th>
-                    <th style={{ ...styles.th, background: "#0b0f14" }}>Chat ID</th>
-                    <th style={{ ...styles.th, background: "#0b0f14" }}>Category</th>
-                    <th style={{ ...styles.th, background: "#0b0f14" }}>Product</th>
-                    <th style={{ ...styles.th, cursor: "pointer", background: "#0b0f14" }} onClick={() => handleSort("priority")}>Priority <SortArrow field="priority" /></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.length === 0 ? (
-                    <tr><td colSpan={6} style={styles.emptyState}>No feedback found matching your filters.</td></tr>
-                  ) : filtered.map((fb, i) => (
-                    <tr
-                      key={fb.id}
-                      style={{ ...styles.trHover, background: hoveredRow === i ? "rgba(255,255,255,0.02)" : "transparent" }}
-                      onMouseEnter={() => setHoveredRow(i)}
-                      onMouseLeave={() => setHoveredRow(null)}
-                    >
-                      <td style={{ ...styles.td, whiteSpace: "nowrap", fontSize: 12, color: "#64748b" }}>{fb.date}</td>
-                      <td style={styles.td}>
-                        <span style={styles.headline} onClick={() => setSelectedFeedback(fb)} onMouseOver={e => e.target.style.color = "#22c55e"} onMouseOut={e => e.target.style.color = "#e2e8f0"}>
-                          {fb.headline}
-                        </span>
-                      </td>
-                      <td style={styles.td}>
-                        {fb.chatId === "MANUAL" ? (
-                          <span style={{ ...styles.badge("rgba(148,163,184,0.12)", "#64748b") }}>Manual</span>
-                        ) : (
-                          <span style={styles.chatLink} onClick={() => setViewingChat(fb)} onMouseOver={e => e.target.style.color = "#7dd3fc"} onMouseOut={e => e.target.style.color = "#38bdf8"}>
-                            {fb.chatId}
-                          </span>
-                        )}
-                      </td>
-                      <td style={styles.td}>
-                        <span style={{ fontSize: 12, color: CATEGORIES_META[fb.category]?.color || "#64748b" }}>
-                          {CATEGORIES_META[fb.category]?.icon} {fb.category}
-                        </span>
-                      </td>
-                      <td style={styles.td}>
-                        <span style={{
-                          display: "inline-block",
-                          padding: "3px 10px",
-                          borderRadius: 20,
-                          fontSize: 11,
-                          fontWeight: 600,
-                          background: fb.product === "CFD" ? "rgba(56,189,248,0.15)" : "rgba(168,85,247,0.15)",
-                          color: fb.product === "CFD" ? "#38bdf8" : "#a855f7",
-                          whiteSpace: "nowrap",
-                        }}>
-                          {fb.product}
-                        </span>
-                      </td>
-                      <td style={styles.td}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <select
-                            value={fb.priority}
-                            onClick={e => e.stopPropagation()}
-                            onChange={e => {
-                              const newPriority = e.target.value;
-                              setFeedbackData(prev => prev.map(item =>
-                                item.id === fb.id ? { ...item, priority: newPriority, manualPriority: true } : item
-                              ));
-                            }}
-                            style={{
-                              background: PRIORITY_COLORS[fb.priority].bg,
-                              color: PRIORITY_COLORS[fb.priority].text,
-                              border: `1px solid ${PRIORITY_COLORS[fb.priority].text}33`,
-                              borderRadius: 20,
-                              padding: "3px 10px",
-                              fontSize: 11,
-                              fontWeight: 600,
-                              cursor: "pointer",
-                              outline: "none",
-                              appearance: "none",
-                              WebkitAppearance: "none",
-                              MozAppearance: "none",
-                              paddingRight: 20,
-                              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748b' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`,
-                              backgroundRepeat: "no-repeat",
-                              backgroundPosition: "right 6px center",
-                            }}
-                          >
-                            <option value="High">High</option>
-                            <option value="Medium">Medium</option>
-                            <option value="Low">Low</option>
-                          </select>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div style={{ padding: "10px 18px", fontSize: 12, color: "#475569" }}>
-              Showing {filtered.length} of {filtered.length}
-            </div>
-          </div>
-        </div>
-
         {/* Common Feedback / Suggestion Table */}
         {commonThemes.length > 0 && (
           <div style={{ ...styles.card, marginBottom: 24 }}>
@@ -1796,6 +1606,196 @@ export default function FeedbackAndSuggestion() {
             </div>
           </div>
         )}
+
+        {/* Feedback / Suggestions Table */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={styles.card}>
+            <div style={styles.cardHeader}>
+              <div style={styles.cardTitle}>
+                <span style={styles.cardTitleIcon}>📋</span>
+                {activeTab === "feedback" ? "Ungrouped Feedback" : "Ungrouped Suggestions"}
+                <span style={{ fontSize: 12, color: "#475569", fontWeight: 400, marginLeft: 8 }}>{filtered.length} results</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <button
+                  onClick={() => openAthenaForContext(
+                    `All ${activeTab === "feedback" ? "Feedback" : "Suggestions"}`,
+                    "allUngrouped",
+                    activeTab,
+                    "#00B4FF",
+                    filtered.length,
+                    filtered
+                  )}
+                  style={{
+                    background: "linear-gradient(135deg, rgba(0,180,255,0.12), rgba(0,229,255,0.06))",
+                    border: "1px solid rgba(0,180,255,0.5)",
+                    borderRadius: 8, color: "#00E5FF", padding: "6px 14px",
+                    fontSize: 12, fontWeight: 700, cursor: "pointer",
+                    display: "flex", alignItems: "center", gap: 7,
+                    animation: "athenaFlameGlow 2.5s ease-in-out infinite",
+                    transition: "all 0.2s",
+                    letterSpacing: 0.3,
+                  }}
+                  onMouseOver={e => {
+                    e.currentTarget.style.background = "linear-gradient(135deg, rgba(0,180,255,0.22), rgba(0,229,255,0.12))";
+                    e.currentTarget.style.boxShadow = "0 0 16px rgba(0,210,255,0.7), 0 0 32px rgba(0,180,255,0.4), 0 0 60px rgba(100,140,255,0.2)";
+                    e.currentTarget.style.transform = "scale(1.03)";
+                  }}
+                  onMouseOut={e => {
+                    e.currentTarget.style.background = "linear-gradient(135deg, rgba(0,180,255,0.12), rgba(0,229,255,0.06))";
+                    e.currentTarget.style.boxShadow = "";
+                    e.currentTarget.style.transform = "scale(1)";
+                  }}
+                >
+                  <AthenaIcon size={20} />
+                  Ask Athena
+                  <span style={{
+                    fontSize: 9, fontWeight: 800,
+                    background: "linear-gradient(90deg, #00E5FF, #38bdf8)",
+                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                    letterSpacing: 0.8,
+                  }}>AI</span>
+                </button>
+                <button
+                  onClick={() => {
+                    const headers = ["ID", "Date", "Chat ID", "Headline", "Full Text", "Category", "Product", "Sentiment", "Priority", "Status", "Type", "Common Topic"];
+                    const escapeCSV = (val) => {
+                      const s = String(val ?? "");
+                      return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
+                    };
+                    const rows = filtered.map(fb => [fb.id, fb.date, fb.chatId, fb.headline, fb.fullText, fb.category, fb.product, fb.sentiment, fb.priority, fb.status, fb.type, fb.common_topic || ""].map(escapeCSV).join(","));
+                    const csv = [headers.join(","), ...rows].join("\n");
+                    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `${activeTab}-data.csv`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    borderRadius: 8,
+                    color: "#94a3b8",
+                    padding: "6px 14px",
+                    fontSize: 12,
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    transition: "background 0.15s, color 0.15s",
+                  }}
+                  onMouseOver={e => { e.currentTarget.style.background = "rgba(34,197,94,0.15)"; e.currentTarget.style.color = "#22c55e"; }}
+                  onMouseOut={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "#94a3b8"; }}
+                >
+                  <span style={{ fontSize: 14 }}>⬇</span> Download CSV
+                </button>
+              </div>
+            </div>
+            <div style={{ overflowX: "auto", maxHeight: 520, overflowY: "auto" }}>
+              <table style={{ ...styles.table, borderCollapse: "separate", borderSpacing: 0 }}>
+                <thead style={{ position: "sticky", top: 0, zIndex: 2 }}>
+                  <tr>
+                    <th style={{ ...styles.th, cursor: "pointer", background: "#0b0f14" }} onClick={() => handleSort("date")}>Date <SortArrow field="date" /></th>
+                    <th style={{ ...styles.th, background: "#0b0f14" }}>Feedback Headline</th>
+                    <th style={{ ...styles.th, background: "#0b0f14" }}>Chat ID</th>
+                    <th style={{ ...styles.th, background: "#0b0f14" }}>Category</th>
+                    <th style={{ ...styles.th, background: "#0b0f14" }}>Product</th>
+                    <th style={{ ...styles.th, cursor: "pointer", background: "#0b0f14" }} onClick={() => handleSort("priority")}>Priority <SortArrow field="priority" /></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr><td colSpan={6} style={styles.emptyState}>No feedback found matching your filters.</td></tr>
+                  ) : filtered.map((fb, i) => (
+                    <tr
+                      key={fb.id}
+                      style={{ ...styles.trHover, background: hoveredRow === i ? "rgba(255,255,255,0.02)" : "transparent" }}
+                      onMouseEnter={() => setHoveredRow(i)}
+                      onMouseLeave={() => setHoveredRow(null)}
+                    >
+                      <td style={{ ...styles.td, whiteSpace: "nowrap", fontSize: 12, color: "#64748b" }}>{fb.date}</td>
+                      <td style={styles.td}>
+                        <span style={styles.headline} onClick={() => setSelectedFeedback(fb)} onMouseOver={e => e.target.style.color = "#22c55e"} onMouseOut={e => e.target.style.color = "#e2e8f0"}>
+                          {fb.headline}
+                        </span>
+                      </td>
+                      <td style={styles.td}>
+                        {fb.chatId === "MANUAL" ? (
+                          <span style={{ ...styles.badge("rgba(148,163,184,0.12)", "#64748b") }}>Manual</span>
+                        ) : (
+                          <span style={styles.chatLink} onClick={() => setViewingChat(fb)} onMouseOver={e => e.target.style.color = "#7dd3fc"} onMouseOut={e => e.target.style.color = "#38bdf8"}>
+                            {fb.chatId}
+                          </span>
+                        )}
+                      </td>
+                      <td style={styles.td}>
+                        <span style={{ fontSize: 12, color: CATEGORIES_META[fb.category]?.color || "#64748b" }}>
+                          {CATEGORIES_META[fb.category]?.icon} {fb.category}
+                        </span>
+                      </td>
+                      <td style={styles.td}>
+                        <span style={{
+                          display: "inline-block",
+                          padding: "3px 10px",
+                          borderRadius: 20,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          background: fb.product === "CFD" ? "rgba(56,189,248,0.15)" : "rgba(168,85,247,0.15)",
+                          color: fb.product === "CFD" ? "#38bdf8" : "#a855f7",
+                          whiteSpace: "nowrap",
+                        }}>
+                          {fb.product}
+                        </span>
+                      </td>
+                      <td style={styles.td}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <select
+                            value={fb.priority}
+                            onClick={e => e.stopPropagation()}
+                            onChange={e => {
+                              const newPriority = e.target.value;
+                              setFeedbackData(prev => prev.map(item =>
+                                item.id === fb.id ? { ...item, priority: newPriority, manualPriority: true } : item
+                              ));
+                            }}
+                            style={{
+                              background: PRIORITY_COLORS[fb.priority].bg,
+                              color: PRIORITY_COLORS[fb.priority].text,
+                              border: `1px solid ${PRIORITY_COLORS[fb.priority].text}33`,
+                              borderRadius: 20,
+                              padding: "3px 10px",
+                              fontSize: 11,
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              outline: "none",
+                              appearance: "none",
+                              WebkitAppearance: "none",
+                              MozAppearance: "none",
+                              paddingRight: 20,
+                              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748b' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`,
+                              backgroundRepeat: "no-repeat",
+                              backgroundPosition: "right 6px center",
+                            }}
+                          >
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                          </select>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div style={{ padding: "10px 18px", fontSize: 12, color: "#475569" }}>
+              Showing {filtered.length} of {filtered.length}
+            </div>
+          </div>
+        </div>
 
       </div>
 
