@@ -13,7 +13,6 @@ export default function AthenaIcon({ size = 48, showWordmark = false }) {
       aria-label="Athena AI logo"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <title>Athena</title>
       <desc>Athena AI — Knowledge, Intelligence, Insight</desc>
 
       <defs>

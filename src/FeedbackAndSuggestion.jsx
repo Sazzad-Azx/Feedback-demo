@@ -186,6 +186,42 @@ function PillDropdown({ icon, label, value, options, onChange, searchable = true
   );
 }
 
+// ─── Tooltip Component ───────────────────────────────────────────
+function Tooltip({ label, children, style = {} }) {
+  const [show, setShow] = useState(false);
+  return (
+    <span
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+      style={{ position: "relative", display: "inline-flex", ...style }}
+    >
+      {children}
+      {show && (
+        <span style={{
+          position: "absolute",
+          top: "calc(100% + 8px)",
+          left: "50%",
+          transform: "translateX(-50%)",
+          background: "linear-gradient(135deg, rgba(15,23,42,0.98), rgba(10,14,22,0.98))",
+          border: "1px solid rgba(0,180,255,0.35)",
+          borderRadius: 6,
+          padding: "6px 10px",
+          fontSize: 11,
+          fontWeight: 600,
+          color: "#00E5FF",
+          letterSpacing: 0.3,
+          whiteSpace: "nowrap",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.6), 0 0 12px rgba(0,180,255,0.2)",
+          pointerEvents: "none",
+          zIndex: 1000,
+        }}>
+          {label}
+        </span>
+      )}
+    </span>
+  );
+}
+
 // ─── Mock Data ───────────────────────────────────────────────────
 const MOCK_FEEDBACK = [
   { id: "FB-001", chatId: "CNV-88234", date: "2026-03-26", headline: "Login issues after password reset on mobile app", fullText: "Customer reported that after resetting their password through the mobile app, they were unable to log back in for over 30 minutes. The session token wasn't refreshing properly. They suggested adding a 'force logout all devices' option during password reset.", category: "Account Related Issue", sentiment: "Negative", priority: "High", status: "Under Review", type: "feedback", product: "CFD", common_topic: "Login fails after password reset" },
@@ -664,6 +700,9 @@ export default function FeedbackAndSuggestion() {
       itemCount,
       priorityCounts,
       productCounts,
+      page: "feedback-suggestion",
+      pageLabel: "Feedback and Suggestions",
+      subPage: activeTab === "feedback" ? "Feedback" : "Suggestions",
       messages: [],
       createdAt: Date.now(),
     };
@@ -947,7 +986,7 @@ export default function FeedbackAndSuggestion() {
             ].map(tab => (
               <button
                 key={tab.key}
-                onClick={() => { setActiveTab(tab.key); setCurrentPage(1); setFilterCategory("All"); setFilterProduct("All"); setExpandedTheme(null); }}
+                onClick={() => { setActiveTab(tab.key); setCurrentPage(1); setFilterCategory([]); setFilterProduct("All"); setExpandedTheme(null); }}
                 style={{
                   padding: "8px 24px",
                   fontSize: 13,
@@ -1406,6 +1445,7 @@ export default function FeedbackAndSuggestion() {
                             <span style={{ fontSize: 10, color: "#64748b", transition: "transform 0.2s", transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
                             {t.theme}
                             {isExpanded && (
+                              <Tooltip label="Ask Athena about this" style={{ marginLeft: 6 }}>
                               <button
                                 onClick={e => {
                                   e.stopPropagation();
@@ -1414,27 +1454,27 @@ export default function FeedbackAndSuggestion() {
                                 style={{
                                   background: "linear-gradient(135deg, rgba(0,180,255,0.12), rgba(0,229,255,0.06))",
                                   border: "1px solid rgba(0,180,255,0.5)",
-                                  borderRadius: 6, color: "#00E5FF", padding: "4px 10px",
-                                  fontSize: 11, fontWeight: 700, cursor: "pointer",
-                                  display: "inline-flex", alignItems: "center", gap: 6,
-                                  animation: "athenaFlameGlow 2.5s ease-in-out infinite",
+                                  color: "#00E5FF", width: 34, height: 34, borderRadius: 8,
+                                  cursor: "pointer", padding: 0,
+                                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                  boxShadow: "0 0 6px rgba(0,210,255,0.35)",
                                   transition: "all 0.2s",
-                                  marginLeft: 6, flexShrink: 0,
+                                  flexShrink: 0,
                                 }}
                                 onMouseOver={e => {
                                   e.currentTarget.style.background = "linear-gradient(135deg, rgba(0,180,255,0.22), rgba(0,229,255,0.12))";
-                                  e.currentTarget.style.boxShadow = "0 0 16px rgba(0,210,255,0.7), 0 0 32px rgba(0,180,255,0.4)";
-                                  e.currentTarget.style.transform = "scale(1.05)";
+                                  e.currentTarget.style.boxShadow = "0 0 10px rgba(0,210,255,0.7), 0 0 20px rgba(0,180,255,0.4)";
+                                  e.currentTarget.style.transform = "scale(1.06)";
                                 }}
                                 onMouseOut={e => {
                                   e.currentTarget.style.background = "linear-gradient(135deg, rgba(0,180,255,0.12), rgba(0,229,255,0.06))";
-                                  e.currentTarget.style.boxShadow = "";
+                                  e.currentTarget.style.boxShadow = "0 0 6px rgba(0,210,255,0.35)";
                                   e.currentTarget.style.transform = "scale(1)";
                                 }}
                               >
-                                <AthenaIcon size={16} />
-                                Ask Athena
+                                <AthenaIcon size={26} />
                               </button>
+                              </Tooltip>
                             )}
                           </div>
                         </td>
@@ -1617,6 +1657,7 @@ export default function FeedbackAndSuggestion() {
                 <span style={{ fontSize: 12, color: "#475569", fontWeight: 400, marginLeft: 8 }}>{filtered.length} results</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <Tooltip label="Ask Athena about this">
                 <button
                   onClick={() => openAthenaForContext(
                     `All ${activeTab === "feedback" ? "Feedback" : "Suggestions"}`,
@@ -1629,33 +1670,26 @@ export default function FeedbackAndSuggestion() {
                   style={{
                     background: "linear-gradient(135deg, rgba(0,180,255,0.12), rgba(0,229,255,0.06))",
                     border: "1px solid rgba(0,180,255,0.5)",
-                    borderRadius: 8, color: "#00E5FF", padding: "6px 14px",
-                    fontSize: 12, fontWeight: 700, cursor: "pointer",
-                    display: "flex", alignItems: "center", gap: 7,
-                    animation: "athenaFlameGlow 2.5s ease-in-out infinite",
+                    color: "#00E5FF", width: 34, height: 34, borderRadius: 8,
+                    cursor: "pointer", padding: 0,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    boxShadow: "0 0 6px rgba(0,210,255,0.35)",
                     transition: "all 0.2s",
-                    letterSpacing: 0.3,
                   }}
                   onMouseOver={e => {
                     e.currentTarget.style.background = "linear-gradient(135deg, rgba(0,180,255,0.22), rgba(0,229,255,0.12))";
-                    e.currentTarget.style.boxShadow = "0 0 16px rgba(0,210,255,0.7), 0 0 32px rgba(0,180,255,0.4), 0 0 60px rgba(100,140,255,0.2)";
-                    e.currentTarget.style.transform = "scale(1.03)";
+                    e.currentTarget.style.boxShadow = "0 0 10px rgba(0,210,255,0.7), 0 0 20px rgba(0,180,255,0.4)";
+                    e.currentTarget.style.transform = "scale(1.06)";
                   }}
                   onMouseOut={e => {
                     e.currentTarget.style.background = "linear-gradient(135deg, rgba(0,180,255,0.12), rgba(0,229,255,0.06))";
-                    e.currentTarget.style.boxShadow = "";
+                    e.currentTarget.style.boxShadow = "0 0 6px rgba(0,210,255,0.35)";
                     e.currentTarget.style.transform = "scale(1)";
                   }}
                 >
-                  <AthenaIcon size={20} />
-                  Ask Athena
-                  <span style={{
-                    fontSize: 9, fontWeight: 800,
-                    background: "linear-gradient(90deg, #00E5FF, #38bdf8)",
-                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                    letterSpacing: 0.8,
-                  }}>AI</span>
+                  <AthenaIcon size={26} />
                 </button>
+                </Tooltip>
                 <button
                   onClick={() => {
                     const headers = ["ID", "Date", "Chat ID", "Headline", "Full Text", "Category", "Product", "Sentiment", "Priority", "Status", "Type", "Common Topic"];
@@ -1969,6 +2003,7 @@ export default function FeedbackAndSuggestion() {
                   <div style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>{drillDownData.length} records</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <Tooltip label="Ask Athena about this">
                   <button
                     onClick={() => {
                       openAthenaForContext(
@@ -1983,42 +2018,38 @@ export default function FeedbackAndSuggestion() {
                     style={{
                       background: "linear-gradient(135deg, rgba(0,180,255,0.12), rgba(0,229,255,0.06))",
                       border: "1px solid rgba(0,180,255,0.5)",
-                      borderRadius: 8, color: "#00E5FF", padding: "7px 16px",
-                      fontSize: 12, fontWeight: 700, cursor: "pointer",
-                      display: "flex", alignItems: "center", gap: 8,
-                      animation: "athenaFlameGlow 2.5s ease-in-out infinite",
+                      color: "#00E5FF", width: 34, height: 34, borderRadius: 8,
+                      cursor: "pointer", padding: 0,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      boxShadow: "0 0 6px rgba(0,210,255,0.35)",
                       transition: "all 0.2s",
-                      letterSpacing: 0.3,
                     }}
                     onMouseOver={e => {
                       e.currentTarget.style.background = "linear-gradient(135deg, rgba(0,180,255,0.22), rgba(0,229,255,0.12))";
-                      e.currentTarget.style.boxShadow = "0 0 16px rgba(0,210,255,0.7), 0 0 32px rgba(0,180,255,0.4), 0 0 60px rgba(100,140,255,0.2)";
-                      e.currentTarget.style.transform = "scale(1.03)";
+                      e.currentTarget.style.boxShadow = "0 0 10px rgba(0,210,255,0.7), 0 0 20px rgba(0,180,255,0.4)";
+                      e.currentTarget.style.transform = "scale(1.06)";
                     }}
                     onMouseOut={e => {
                       e.currentTarget.style.background = "linear-gradient(135deg, rgba(0,180,255,0.12), rgba(0,229,255,0.06))";
-                      e.currentTarget.style.boxShadow = "";
+                      e.currentTarget.style.boxShadow = "0 0 6px rgba(0,210,255,0.35)";
                       e.currentTarget.style.transform = "scale(1)";
                     }}
                   >
-                    <AthenaIcon size={22} />
-                    Ask Athena
-                    <span style={{
-                      fontSize: 9, fontWeight: 800,
-                      background: "linear-gradient(90deg, #00E5FF, #38bdf8)",
-                      WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                      letterSpacing: 0.8,
-                    }}>AI</span>
+                    <AthenaIcon size={26} />
                   </button>
+                  </Tooltip>
+                  <Tooltip label="Export CSV">
                   <button
                     onClick={exportDrillCSV}
                     style={{
                       background: "transparent", border: "1px solid rgba(52,211,153,0.4)",
-                      borderRadius: 8, color: "#34d399", padding: "7px 16px",
-                      fontSize: 12, fontWeight: 600, cursor: "pointer",
-                      display: "flex", alignItems: "center", gap: 6,
+                      color: "#34d399", width: 34, height: 34, borderRadius: 8,
+                      cursor: "pointer", fontSize: 16, padding: 0,
+                      display: "flex", alignItems: "center", justifyContent: "center",
                     }}
-                  >Export CSV</button>
+                  >⬇</button>
+                  </Tooltip>
+                  <Tooltip label="Close">
                   <button
                     onClick={closeDrillDown}
                     style={{
@@ -2028,6 +2059,7 @@ export default function FeedbackAndSuggestion() {
                       display: "flex", alignItems: "center", justifyContent: "center",
                     }}
                   >✕</button>
+                  </Tooltip>
                 </div>
               </div>
 
@@ -2406,8 +2438,12 @@ export default function FeedbackAndSuggestion() {
                       }}>
                         {s.contextLabel}
                       </div>
-                      <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>
-                        {s.itemCount} {s.itemCount === 1 ? "record" : "records"} · {s.messages.length} msgs
+                      <div style={{ fontSize: 10, color: "#64748b", marginTop: 2, display: "flex", alignItems: "center", gap: 5 }}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        {s.subPage && <span>{s.subPage} ·</span>}
+                        <span>{s.itemCount} {s.itemCount === 1 ? "record" : "records"} · {s.messages.length} msgs</span>
                       </div>
                     </div>
                     {/* Close session button */}
@@ -2454,9 +2490,9 @@ export default function FeedbackAndSuggestion() {
                 </div>
                 <div style={{ display: "flex", gap: 6 }}>
                   {/* Minimize */}
+                  <Tooltip label="Minimize">
                   <button
                     onClick={() => setAthenaState("minimized")}
-                    title="Minimize"
                     style={{
                       background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
                       borderRadius: 8, width: 32, height: 32, cursor: "pointer",
@@ -2468,10 +2504,11 @@ export default function FeedbackAndSuggestion() {
                   >
                     −
                   </button>
+                  </Tooltip>
                   {/* Close */}
+                  <Tooltip label="Close Athena">
                   <button
                     onClick={() => setAthenaState("closed")}
-                    title="Close Athena"
                     style={{
                       background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
                       borderRadius: 8, width: 32, height: 32, cursor: "pointer",
@@ -2483,6 +2520,7 @@ export default function FeedbackAndSuggestion() {
                   >
                     ✕
                   </button>
+                  </Tooltip>
                 </div>
               </div>
 
@@ -2515,32 +2553,6 @@ export default function FeedbackAndSuggestion() {
                           <div style={{ width: 8, height: 8, borderRadius: "50%", background: athenaActiveSession.contextColor, boxShadow: `0 0 8px ${athenaActiveSession.contextColor}` }} />
                           <span style={{ fontSize: 14, fontWeight: 600, color: athenaActiveSession.contextColor }}>{athenaActiveSession.contextLabel}</span>
                         </div>
-
-                        {/* #8 Context summary chips */}
-                        {(Object.keys(athenaActiveSession.priorityCounts || {}).length > 0 || Object.keys(athenaActiveSession.productCounts || {}).length > 0) && (
-                          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", marginTop: 16 }}>
-                            {Object.entries(athenaActiveSession.priorityCounts || {}).map(([p, count]) => (
-                              <span key={p} style={{
-                                fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 12,
-                                background: PRIORITY_COLORS[p]?.bg || "rgba(148,163,184,0.1)",
-                                color: PRIORITY_COLORS[p]?.text || "#94a3b8",
-                                border: `1px solid ${(PRIORITY_COLORS[p]?.text || "#94a3b8")}22`,
-                              }}>
-                                {p}: {count}
-                              </span>
-                            ))}
-                            {Object.entries(athenaActiveSession.productCounts || {}).map(([p, count]) => (
-                              <span key={p} style={{
-                                fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 12,
-                                background: p === "CFD" ? "rgba(56,189,248,0.12)" : "rgba(168,85,247,0.12)",
-                                color: p === "CFD" ? "#38bdf8" : "#a855f7",
-                                border: `1px solid ${p === "CFD" ? "rgba(56,189,248,0.2)" : "rgba(168,85,247,0.2)"}`,
-                              }}>
-                                {p}: {count}
-                              </span>
-                            ))}
-                          </div>
-                        )}
 
                         {/* #7 Suggested questions as cards */}
                         <div style={{ marginTop: 28, fontSize: 10, fontWeight: 600, color: "#475569", textTransform: "uppercase", letterSpacing: 1 }}>Try asking</div>
